@@ -108,7 +108,7 @@ export async function createPatient(
   return toPatient(data as PatientsRow);
 }
 
-export interface UpdatePatientInput {
+interface UpdatePatientInput {
   firstName: string;
   lastName: string;
   sex: Exclude<Sex, null> | null;
@@ -164,7 +164,7 @@ export async function deletePatient(id: string): Promise<void> {
   if (error != null) throw error;
 }
 
-export interface NewAssessmentInput {
+interface NewAssessmentInput {
   patientId: string;
   status: AssessmentStatus;
   sections: AssessmentSections;

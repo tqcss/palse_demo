@@ -18,7 +18,7 @@ import { supabase } from "./supabase.ts";
  * stored unscored, results panels keep their "pending engine" placeholders).
  */
 
-export type RiskLabel = "LOW RISK" | "MODERATE RISK" | "HIGH RISK";
+type RiskLabel = "LOW RISK" | "MODERATE RISK" | "HIGH RISK";
 
 /** Why a scoring attempt failed; lets the UI react without string matching.
  *
@@ -30,7 +30,7 @@ export type RiskLabel = "LOW RISK" | "MODERATE RISK" | "HIGH RISK";
  *                      misconfiguration; the engine's detail is preserved).
  * - `server`         — any other non-OK engine response.
  */
-export type MlEngineErrorKind =
+type MlEngineErrorKind =
   | "not_configured"
   | "unreachable"
   | "timeout"

@@ -1,4 +1,4 @@
-export interface PrimaryButtonProps
+interface PrimaryButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /** Show a spinner and ignore the action while true. */
   pending?: boolean;

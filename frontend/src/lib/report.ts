@@ -2,7 +2,7 @@ import type { Assessment, AssessmentStatus } from "./assessment.ts";
 import { assessmentPrediction } from "./db.ts";
 import type { Patient, RiskLevel } from "./patient.ts";
 
-export interface ReportStats {
+interface ReportStats {
   totalAssessments: number;
   completed: number;
   drafts: number;

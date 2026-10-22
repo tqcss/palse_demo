@@ -1,5 +1,5 @@
 /**
- * Map Supabase auth error messages/codes to friendly copy that never leaks
+ * Maps Supabase auth error messages/codes to friendly copy that never leaks
  * internal details. Unknown failures fall back to a generic message while the
  * raw error is available to the caller for console logging.
  */
@@ -81,19 +81,6 @@ export function guide(error: unknown, fallback = GENERIC_MESSAGE): string {
 
   console.error("[palse auth]", detail.message ?? detail);
   return fallback;
-}
-
-/**
- * Supabase reports "email exists" only via a special signUp result shape in
- * some flow variants; callers can treat "risky" status explicitly.
- */
-export function isRateLimitError(error: unknown): boolean {
-  const message = normalize(error)?.message ?? "";
-  return (
-    message.includes("rate limit") ||
-    message.includes("Too many requests") ||
-    message.includes("only requested once per minute")
-  );
 }
 
 export { GENERIC_MESSAGE as FALLBACK_ERROR_MESSAGE };

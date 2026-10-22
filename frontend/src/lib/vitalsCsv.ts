@@ -54,14 +54,14 @@ const TIMESTAMP_ALIASES: ReadonlyArray<string> = [
   "date",
 ];
 
-export interface ParsedRow {
+interface ParsedRow {
   row: NewVitalObservation;
   /** Raw CSV row number the data came from (1-based, header included). */
   sourceLine: number;
   recordedAt: string;
 }
 
-export interface ParsedError {
+interface ParsedError {
   sourceLine: number;
   message: string;
 }
@@ -79,7 +79,7 @@ export const CSV_IMPORT_LIMIT = 500;
  * tolerant. Deliberately dependency-free — readings CSVs are flat numbers
  * and timestamps.
  */
-export function parseCsv(text: string): string[][] {
+function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let field = "";
   let row: string[] = [];
