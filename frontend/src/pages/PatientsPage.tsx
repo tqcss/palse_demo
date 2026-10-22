@@ -1,12 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import FormInput from "../components/FormInput.tsx";
 import Modal from "../components/Modal.tsx";
 import Notice from "../components/Notice.tsx";
 import Panel from "../components/Panel.tsx";
 import PatientModal from "../components/PatientModal.tsx";
 import RiskBadge from "../components/RiskBadge.tsx";
-import { deletePatient, listPatients } from "../lib/db.ts";
+import {
+  deletePatient,
+  latestEngineScores,
+  listAssessments,
+  listPatients,
+  listVitalObservations,
+  riskLevelFromLabel,
+  type EngineScoreStamp,
+} from "../lib/db.ts";
+import { engineConfigured } from "../lib/ml.ts";
 import { guide } from "../lib/authErrors.ts";
 import type { RiskLevel } from "../lib/patient.ts";
 import {
@@ -39,7 +49,36 @@ export default function PatientsPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [deleting, setDeleting] = useState<Patient | null>(null);
   const [deletePending, setDeletePending] = useState(false);
+  /** Records-to-be-removed counts for the delete dialog (null = unknown). */
+  const [deleteCounts, setDeleteCounts] = useState<{
+    assessments: number | null;
+    observations: number | null;
+  } | null>(null);
+  /** Confirmation token typed by the user (MRN, or DELETE without an MRN). */
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  /** Newest engine score per patient (provenance captions). */
+  const [engineScores, setEngineScores] = useState<
+    Record<string, EngineScoreStamp> | null
+  >(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const countsLoadRef = useRef(0);
+
+  useEffect(() => {
+    let active = true;
+    latestEngineScores()
+      .then((scores) => {
+        if (active) setEngineScores(scores);
+      })
+      .catch((scoresError: unknown) => {
+        // Provenance captions are cosmetic; the registry still loads.
+        console.error("[palse] engine score lookup failed", scoresError);
+        if (active) setEngineScores({});
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const navigate = useNavigate();
 
@@ -80,11 +119,53 @@ export default function PatientsPage() {
     setAddOpen(false);
   }
 
+  /** Opens the delete dialog and resolves the records-to-be-removed counts
+   * that make its warning concrete (and feed the audit trail). */
+  function startDelete(patient: Patient) {
+    setDeleting(patient);
+    setDeleteCounts(null);
+    setDeleteConfirm("");
+    setActionError(null);
+    const loadId = countsLoadRef.current + 1;
+    countsLoadRef.current = loadId;
+    void (async () => {
+      try {
+        const [assessments, observations] = await Promise.all([
+          listAssessments(patient.id),
+          listVitalObservations(patient.id),
+        ]);
+        // countsLoadRef guards against a stale response after reopening the
+        // dialog for a different patient while this fetch is in flight.
+        if (countsLoadRef.current === loadId) {
+          setDeleteCounts({
+            assessments: assessments.length,
+            observations: observations.length,
+          });
+        }
+      } catch (countError) {
+        console.error("[palse] delete preview counts failed", countError);
+        if (countsLoadRef.current === loadId) {
+          setDeleteCounts({ assessments: null, observations: null });
+        }
+      }
+    })();
+  }
+
+  /** The token the user must type to confirm deletion: the MRN when one is
+   * on record, otherwise the explicit word DELETE. */
+  function deleteConfirmationToken(deleting: Patient): string {
+    const mrn = deleting.mrn?.trim();
+    return mrn != null && mrn !== "" ? mrn : "DELETE";
+  }
+
   async function confirmDelete() {
     if (deleting == null || deletePending) return;
     setDeletePending(true);
     try {
-      await deletePatient(deleting.id);
+      await deletePatient(deleting.id, {
+        assessments: deleteCounts?.assessments ?? null,
+        observations: deleteCounts?.observations ?? null,
+      });
       setPatients((prev) => prev?.filter((p) => p.id !== deleting.id) ?? null);
       setDeleting(null);
     } catch (error) {
@@ -109,7 +190,9 @@ export default function PatientsPage() {
           <p className="text-sm text-theme-gray">
             {loading
               ? "Loading registry…"
-              : `${counts.all} registered ${counts.all === 1 ? "patient" : "patients"} · risk levels are set manually until the prediction engine is live`}
+              : engineConfigured()
+                ? `${counts.all} registered ${counts.all === 1 ? "patient" : "patients"} · risk levels are set by the prediction engine on completion and can be overridden manually`
+                : `${counts.all} registered ${counts.all === 1 ? "patient" : "patients"} · risk levels are set manually until the prediction engine is configured`}
           </p>
         </div>
 
@@ -169,9 +252,10 @@ export default function PatientsPage() {
       ) : (
         <PatientTable
           patients={visible}
+          engineScores={engineScores}
           onEdit={(id) => void navigate(`/patients/${id}/edit`)}
           onMonitor={(id) => void navigate(`/monitor?patient=${id}`)}
-          onDelete={setDeleting}
+          onDelete={startDelete}
         />
       )}
 
@@ -189,10 +273,23 @@ export default function PatientsPage() {
           <div className="flex flex-col gap-5">
             <p className="text-sm text-theme-ink-soft">
               Delete <strong>{formatPatientName(deleting)}</strong>
-              {deleting.mrn ? ` (MRN ${deleting.mrn})` : ""}? All of their
-              assessment records are removed together with the patient. This
-              cannot be undone.
+              {deleting.mrn ? ` (MRN ${deleting.mrn})` : ""}?
             </p>
+            <p className="text-sm text-theme-ink-soft">
+              {deleteCounts == null
+                ? "Counting the records that will be removed…"
+                : deleteCounts.assessments === null &&
+                    deleteCounts.observations === null
+                  ? "All registry entries for this patient will be removed from the registry view. This cannot be undone."
+                  : `This removes ${deleteCounts.assessments ?? 0} ${deleteCounts.assessments === 1 ? "assessment" : "assessments"} and ${deleteCounts.observations ?? 0} ${deleteCounts.observations === 1 ? "vital reading" : "vital readings"}. The record is kept as an audit entry but no longer appears in the registry. This cannot be undone.`}
+            </p>
+            <FormInput
+              id="delete-confirm"
+              label={`Type ${deleteConfirmationToken(deleting)} to confirm`}
+              placeholder={deleteConfirmationToken(deleting)}
+              value={deleteConfirm}
+              onChange={(event) => setDeleteConfirm(event.target.value)}
+            />
             <div className="flex justify-end gap-3">
               <button
                 type="button"
@@ -203,7 +300,11 @@ export default function PatientsPage() {
               </button>
               <button
                 type="button"
-                disabled={deletePending}
+                disabled={
+                  deletePending ||
+                  deleteConfirm.trim().toUpperCase() !==
+                    deleteConfirmationToken(deleting).toUpperCase()
+                }
                 aria-busy={deletePending}
                 onClick={() => void confirmDelete()}
                 className="flex items-center gap-2 rounded-lg bg-risk-high-fg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-risk-high-fg disabled:opacity-60"
@@ -224,13 +325,35 @@ export default function PatientsPage() {
   );
 }
 
+/** Where the patient's risk level came from: a live engine score (when the
+ * label still agrees with the latest scoring) or a manual registry override. */
+function riskProvenance(
+  patient: Patient,
+  engineScores: Record<string, EngineScoreStamp> | null,
+): { label: string; engine: boolean } {
+  if (patient.riskLevel === "pending") {
+    return { label: "Awaiting scoring", engine: false };
+  }
+  const score = engineScores?.[patient.id];
+  if (score == null) {
+    return { label: "Set manually", engine: false };
+  }
+  const engineRisk = riskLevelFromLabel(score.riskLabel);
+  if (engineRisk === patient.riskLevel) {
+    return { label: `Engine · ${formatDateLabel(score.predictedAt)}`, engine: true };
+  }
+  return { label: "Manual override", engine: false };
+}
+
 function PatientTable({
   patients,
+  engineScores,
   onEdit,
   onMonitor,
   onDelete,
 }: {
   patients: Patient[];
+  engineScores: Record<string, EngineScoreStamp> | null;
   onEdit: (id: string) => void;
   onMonitor: (id: string) => void;
   onDelete: (patient: Patient) => void;
@@ -252,7 +375,9 @@ function PatientTable({
             </tr>
           </thead>
           <tbody>
-            {patients.map((patient) => (
+            {patients.map((patient) => {
+              const provenance = riskProvenance(patient, engineScores);
+              return (
               <tr
                 key={patient.id}
                 className="border-b border-theme-line/60 last:border-0 odd:bg-white even:bg-theme-light-gray/25"
@@ -275,7 +400,18 @@ function PatientTable({
                   {patient.birthWeightGrams ?? "—"}
                 </td>
                 <td className="px-3 py-3.5">
-                  <RiskBadge level={patient.riskLevel} />
+                  <div className="flex flex-col items-start gap-1">
+                    <RiskBadge level={patient.riskLevel} />
+                    <span
+                      className={
+                        provenance.engine
+                          ? "text-xs font-medium text-theme-ink-soft"
+                          : "text-xs text-theme-gray"
+                      }
+                    >
+                      {provenance.label}
+                    </span>
+                  </div>
                 </td>
                 <td className="px-3 py-3.5 text-theme-gray">
                   {formatDateLabel(patient.createdAt)}
@@ -292,14 +428,17 @@ function PatientTable({
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
 
       {/* Mobile stacked cards */}
       <ul className="flex flex-col gap-3 md:hidden">
-        {patients.map((patient) => (
+        {patients.map((patient) => {
+          const provenance = riskProvenance(patient, engineScores);
+          return (
           <li
             key={patient.id}
             className="rounded-xl border border-theme-line bg-white p-4 shadow-sm"
@@ -314,7 +453,18 @@ function PatientTable({
                   {formatDateLabel(patient.createdAt)}
                 </div>
               </div>
-              <RiskBadge level={patient.riskLevel} />
+              <div className="flex flex-col items-end gap-1">
+                <RiskBadge level={patient.riskLevel} />
+                <span
+                  className={
+                    provenance.engine
+                      ? "text-xs font-medium text-theme-ink-soft"
+                      : "text-xs text-theme-gray"
+                  }
+                >
+                  {provenance.label}
+                </span>
+              </div>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-theme-gray">
               <span>Sex: <span className="font-medium text-theme-ink-soft capitalize">{patient.sex ?? "—"}</span></span>
@@ -345,7 +495,8 @@ function PatientTable({
               </button>
             </div>
           </li>
-        ))}
+          );
+        })}
       </ul>
     </>
   );

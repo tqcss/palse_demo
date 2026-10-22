@@ -40,11 +40,20 @@ type MlEngineErrorKind =
 /** Thrown by runPrediction. */
 export class MlEngineError extends Error {
   readonly kind: MlEngineErrorKind;
+  /** HTTP status for `auth`/`server` responses (undefined otherwise). Helps
+   * UI copy stay sanitized ("HTTP 503") while `message` keeps the engine's
+   * raw detail for console/log output only. */
+  readonly status?: number;
 
-  constructor(kind: MlEngineErrorKind, message: string) {
+  constructor(
+    kind: MlEngineErrorKind,
+    message: string,
+    options: { status?: number } = {},
+  ) {
     super(message);
     this.name = "MlEngineError";
     this.kind = kind;
+    this.status = options.status;
   }
 }
 
@@ -78,10 +87,15 @@ function binary(value: boolean | null | undefined): Binary | undefined {
   return value ? 1 : 0;
 }
 
+/** Accepts comma decimals ("36,5") — some locales type them reflexively. */
+function normalizeDecimal(text: string): string {
+  return text.replace(",", ".");
+}
+
 function numberField(value: string): number | undefined {
   const text = value.trim();
   if (text === "") return undefined;
-  const parsed = Number(text);
+  const parsed = Number(normalizeDecimal(text));
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
@@ -221,6 +235,7 @@ export async function runPrediction(
     throw new MlEngineError(
       "auth",
       detail ?? "Your session expired. Please sign in again to run scoring.",
+      { status: response.status },
     );
   }
   if (!response.ok) {
@@ -228,11 +243,14 @@ export async function runPrediction(
       body != null && typeof body === "object" && "detail" in body
         ? String((body as { detail: unknown }).detail)
         : null;
+    // `message` keeps the raw engine detail for console/log output; UI copy
+    // renders the sanitized status line only (see ScoringFailureNotice).
     throw new MlEngineError(
       "server",
       detail
         ? `The prediction engine returned an error (${response.status}): ${detail}`
         : `The prediction engine returned an error (${response.status}).`,
+      { status: response.status },
     );
   }
 

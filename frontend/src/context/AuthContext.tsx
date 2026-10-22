@@ -83,6 +83,9 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const idleWarnedRef = useRef(false);
   const idleSignedOutRef = useRef(false);
 
+  /** Epoch ms at which the forced sign-out fires while `idling`. */
+  const [idleEndsAt, setIdleEndsAt] = useState<number | null>(null);
+
   useEffect(() => {
     if (session == null) return;
     lastActiveRef.current = Date.now();
@@ -94,6 +97,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       lastActiveRef.current = Date.now();
       if (idleWarnedRef.current) {
         idleWarnedRef.current = false;
+        setIdleEndsAt(null);
         setIdling(false);
       }
     };
@@ -108,6 +112,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       if (idleFor >= IDLE_LOGOUT_MS) {
         if (idleSignedOutRef.current) return;
         idleSignedOutRef.current = true;
+        setIdleEndsAt(null);
         void supabase.auth.signOut();
         navigate("/signin?idle=1", { replace: true });
         return;
@@ -116,6 +121,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       if (idleFor >= IDLE_WARN_MS) {
         if (!idleWarnedRef.current) {
           idleWarnedRef.current = true;
+          setIdleEndsAt(Date.now() + (IDLE_LOGOUT_MS - idleFor));
           setIdling(true);
         }
       }
@@ -130,7 +136,15 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }, [session, navigate]);
 
   const clearRecovery = useCallback(() => setRecovering(false), []);
-  const clearIdle = useCallback(() => setIdling(false), []);
+
+  /** "Stay signed in": resets the idle clock explicitly — not just via the
+   * incidental mouse/keyboard event the dismiss happens to emit. */
+  const clearIdle = useCallback(() => {
+    lastActiveRef.current = Date.now();
+    idleWarnedRef.current = false;
+    setIdleEndsAt(null);
+    setIdling(false);
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -140,11 +154,12 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       recovering,
       idling,
+      idleEndsAt,
       signOut,
       clearRecovery,
       clearIdle,
     }),
-    [user, session, profile, loading, recovering, idling, signOut, clearRecovery, clearIdle],
+    [user, session, profile, loading, recovering, idling, idleEndsAt, signOut, clearRecovery, clearIdle],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

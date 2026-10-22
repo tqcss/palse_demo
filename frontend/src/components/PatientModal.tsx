@@ -109,12 +109,14 @@ export default function PatientModal({
           <FormInput
             id="new-first-name"
             label="First name"
+            autoComplete="off"
             value={firstName}
             onChange={(event) => setFirstName(event.target.value)}
           />
           <FormInput
             id="new-last-name"
             label="Last name"
+            autoComplete="off"
             value={lastName}
             onChange={(event) => setLastName(event.target.value)}
           />
@@ -124,6 +126,7 @@ export default function PatientModal({
           id="new-mrn"
           label="MRN № (optional)"
           placeholder="e.g. NEO-2024-001"
+          autoComplete="off"
           value={mrn}
           onChange={(event) => setMrn(event.target.value)}
         />
@@ -138,6 +141,7 @@ export default function PatientModal({
             id="new-dob"
             label="Date of birth"
             type="date"
+            autoComplete="off"
             value={dateOfBirth}
             onChange={(event) => setDateOfBirth(event.target.value)}
           />
@@ -151,6 +155,7 @@ export default function PatientModal({
             type="number"
             min={20}
             max={45}
+            autoComplete="off"
             value={gestationalAgeWeeks}
             onChange={(event) => setGa(event.target.value)}
           />
@@ -161,6 +166,7 @@ export default function PatientModal({
             type="number"
             min={200}
             max={8000}
+            autoComplete="off"
             value={birthWeightGrams}
             onChange={(event) => setBw(event.target.value)}
           />
@@ -182,6 +188,7 @@ export default function PatientModal({
               id="new-notes"
               label="Notes (optional)"
               placeholder="Allergies, birth complications, transfer context…"
+              autoComplete="off"
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
             />

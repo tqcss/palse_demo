@@ -449,7 +449,14 @@ export default function EditPatientPage() {
               <p className="text-xs text-theme-gray">MRN {form.mrn.trim()}</p>
             ) : null}
           </div>
-          <RiskBadge level={form.riskLevel} />
+          <div className="flex flex-col items-end gap-1">
+            <RiskBadge level={form.riskLevel} />
+            <span className="text-xs text-theme-gray">
+              {latest?.row.prediction != null
+                ? `Engine-scored ${formatDateTimeLabel(latest.row.predictedAt)}`
+                : "Risk level set manually — no engine score on record"}
+            </span>
+          </div>
         </div>
       </header>
 
@@ -480,12 +487,14 @@ export default function EditPatientPage() {
           <FormInput
             id="edit-first-name"
             label="First name"
+            autoComplete="off"
             value={form.firstName}
             onChange={(event) => patchForm({ firstName: event.target.value })}
           />
           <FormInput
             id="edit-last-name"
             label="Last name"
+            autoComplete="off"
             value={form.lastName}
             onChange={(event) => patchForm({ lastName: event.target.value })}
           />
@@ -493,6 +502,7 @@ export default function EditPatientPage() {
             id="edit-mrn"
             label="MRN №"
             placeholder="e.g. NEO-2024-001"
+            autoComplete="off"
             value={form.mrn}
             onChange={(event) => patchForm({ mrn: event.target.value })}
           />
@@ -551,6 +561,7 @@ export default function EditPatientPage() {
             id="edit-dob"
             label="Date of birth"
             type="date"
+            autoComplete="off"
             value={form.dateOfBirth}
             onChange={(event) => patchForm({ dateOfBirth: event.target.value })}
           />
@@ -569,6 +580,7 @@ export default function EditPatientPage() {
             type="number"
             min={20}
             max={45}
+            autoComplete="off"
             value={form.gestationalAgeWeeks}
             onChange={(event) => patchForm({ gestationalAgeWeeks: event.target.value })}
           />
@@ -578,6 +590,7 @@ export default function EditPatientPage() {
             type="number"
             min={200}
             max={8000}
+            autoComplete="off"
             value={form.birthWeightGrams}
             onChange={(event) => patchForm({ birthWeightGrams: event.target.value })}
           />
@@ -586,6 +599,7 @@ export default function EditPatientPage() {
               id="edit-notes"
               label="Notes"
               placeholder="Allergies, birth complications, transfer context…"
+              autoComplete="off"
               value={form.notes}
               onChange={(event) => patchForm({ notes: event.target.value })}
             />

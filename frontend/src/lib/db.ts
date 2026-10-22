@@ -36,6 +36,7 @@ type PatientsRow = {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
 };
 
 function toPatient(row: PatientsRow): Patient {
@@ -58,11 +59,12 @@ function toPatient(row: PatientsRow): Patient {
   };
 }
 
-/** Registry list, newest first. */
+/** Registry list, newest first (soft-deleted patients excluded). */
 export async function listPatients(): Promise<Patient[]> {
   const { data, error } = await supabase
     .from("patients")
     .select("*")
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   if (error != null) throw error;
@@ -126,6 +128,7 @@ export async function getPatient(id: string): Promise<Patient | null> {
     .from("patients")
     .select("*")
     .eq("id", id)
+    .is("deleted_at", null)
     .maybeSingle();
 
   if (error != null) throw error;
@@ -158,10 +161,50 @@ export async function updatePatient(
   return toPatient(data as PatientsRow);
 }
 
-/** Removes the patient and, by cascade, all of their assessments. */
-export async function deletePatient(id: string): Promise<void> {
-  const { error } = await supabase.from("patients").delete().eq("id", id);
+/** Context recorded with the deletion audit entry (ids/counts only — no PHI). */
+export interface DeletePatientMeta {
+  assessments?: number | null;
+  observations?: number | null;
+}
+
+/**
+ * Soft-deletes a patient: the patients row is stamped `deleted_at` (registry
+ * reads filter it; the clinical rows stay intact for audit). An audit_log
+ * entry records who deleted what and the record counts shown in the
+ * confirmation dialog. Requires schema.sql section 10 (deleted_at +
+ * audit_log); the registry dialog surfaces failures as an action error.
+ */
+export async function deletePatient(
+  id: string,
+  meta: DeletePatientMeta = {},
+): Promise<void> {
+  const { error } = await supabase
+    .from("patients")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id)
+    .is("deleted_at", null);
   if (error != null) throw error;
+
+  // The deletion itself has already succeeded, so a logging failure is
+  // surfaced to the console rather than failing the call afterwards.
+  try {
+    const { data: session } = await supabase.auth.getSession();
+    const actor = session.session?.user.id;
+    if (actor != null) {
+      await supabase.from("audit_log").insert({
+        actor,
+        action: "patient.delete",
+        entity: "patients",
+        entity_id: id,
+        details: {
+          assessments: meta.assessments ?? null,
+          observations: meta.observations ?? null,
+        },
+      });
+    }
+  } catch (auditError) {
+    console.error("[palse] audit log write failed", auditError);
+  }
 }
 
 interface NewAssessmentInput {
@@ -418,6 +461,44 @@ export async function savePrediction(
 /** Maps a legacy risk label onto the registry's low/moderate/high enum. */
 export function riskLevelFromLabel(label: string): Exclude<RiskLevel, "pending"> {
   return label === "HIGH RISK" ? "high" : label === "LOW RISK" ? "low" : "moderate";
+}
+
+/** Newest engine score per patient, for registry provenance captions. */
+export interface EngineScoreStamp {
+  predictedAt: string;
+  riskLabel: string;
+}
+
+/**
+ * Latest engine score per patient, keyed by patient id (one query for the
+ * whole registry instead of N per-row lookups). Per-row provenance is then
+ * decided by comparing the stamp against the patient's manually-editable
+ * risk_level — exact source tracking would need a denormalized column.
+ */
+export async function latestEngineScores(): Promise<
+  Record<string, EngineScoreStamp>
+> {
+  const { data, error } = await supabase
+    .from("assessments")
+    .select("patient_id, predicted_at, prediction")
+    .not("predicted_at", "is", null)
+    .order("predicted_at", { ascending: false });
+
+  if (error != null) throw error;
+  const latest: Record<string, EngineScoreStamp> = {};
+  for (const row of (data ?? []) as Array<{
+    patient_id: string | null;
+    predicted_at: string | null;
+    prediction: StoredPrediction | null;
+  }>) {
+    if (row.patient_id == null || row.predicted_at == null) continue;
+    if (latest[row.patient_id] != null) continue; // rows arrive newest-first
+    latest[row.patient_id] = {
+      predictedAt: row.predicted_at,
+      riskLabel: row.prediction?.risk_label ?? "",
+    };
+  }
+  return latest;
 }
 
 async function updatePatientRiskLevel(

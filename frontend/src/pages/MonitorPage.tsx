@@ -385,6 +385,27 @@ export default function MonitorPage() {
     [observations, latest],
   );
 
+  /** High-risk follow-up nudge: high-risk patients need close observation.
+   * When the newest reading is stale (or none exists), prompt for a fresh
+   * set — returns the label to show, or null when no nudge is due. */
+  const highRiskNudge = useMemo(() => {
+    if (loading || refreshing || selected == null || selected.riskLevel !== "high") {
+      return null;
+    }
+    const newest = observations[0];
+    if (newest == null) {
+      return `${formatPatientName(selected)} is currently high risk. Record the first vital-sign reading below to start monitoring.`;
+    }
+    // Wall-clock staleness is the point of this message; renders are driven
+    // by data loads and realtime pushes (the memo's deps), not a tick.
+    // oxlint-disable-next-line react/purity
+    const ageHours = (Date.now() - Date.parse(newest.recordedAt)) / 3_600_000;
+    if (ageHours >= 24) {
+      return `${formatPatientName(selected)} is currently high risk, and the last reading is from ${formatDateTimeLabel(newest.recordedAt)} (${Math.floor(ageHours)} h ago). Record a fresh set of observations below.`;
+    }
+    return null;
+  }, [selected, observations, loading, refreshing]);
+
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1.5">
@@ -438,6 +459,8 @@ export default function MonitorPage() {
       </div>
 
       {error ? <Notice tone="danger">{error}</Notice> : null}
+
+      {highRiskNudge != null ? <Notice tone="warning">{highRiskNudge}</Notice> : null}
 
       {selected != null && latest == null && observations.length === 0 && !loading && !refreshing ? (
         <Notice tone="info">

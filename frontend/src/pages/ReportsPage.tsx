@@ -178,14 +178,14 @@ export default function ReportsPage() {
             />
             {stats.accuracyPercent != null ? (
               <StatCard
-                label="Accuracy rate"
+                label="Outcome agreement"
                 value={`${stats.accuracyPercent}%`}
-                sub={`${stats.confirmedScored} confirmed outcome${stats.confirmedScored === 1 ? "" : "s"}`}
+                sub={`of ${stats.confirmedScored} confirmed outcome${stats.confirmedScored === 1 ? "" : "s"} — prediction matched the retrospective diagnosis`}
                 accent="bg-risk-low-fg"
               />
             ) : (
               <StatCard
-                label="Accuracy rate"
+                label="Outcome agreement"
                 value="—"
                 sub="Pending confirmed outcomes"
                 muted

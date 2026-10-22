@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { useBlocker } from "react-router-dom";
 
 import ChipGroup from "../components/ChipGroup.tsx";
 import type { ChipOption } from "../components/ChipGroup.tsx";
 import ChoiceGroup from "../components/ChoiceGroup.tsx";
 import type { ChoiceOption } from "../components/ChoiceGroup.tsx";
 import FormInput from "../components/FormInput.tsx";
+import Modal from "../components/Modal.tsx";
 import Notice from "../components/Notice.tsx";
 import Panel from "../components/Panel.tsx";
 import PrimaryButton from "../components/PrimaryButton.tsx";
@@ -193,6 +195,10 @@ export default function Dashboard() {
   const [saving, setSaving] = useState<AssessmentStatus | null>(null);
   const [predicting, setPredicting] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
+  /** Last-persisted sections snapshot (initial, selected-patient, or autosaved).
+   * Everything the user typed past it is at risk of loss on a leave. */
+  const [savedBaseline, setSavedBaseline] =
+    useState<AssessmentSections>(EMPTY_SECTIONS);
   const [result, setResult] = useState<PredictionResult | null>(null);
   /** Downloadable snapshot (patient + scored inputs) for the PDF report;
    * survives the post-completion wizard reset, cleared when the context
@@ -250,6 +256,58 @@ export default function Dashboard() {
     };
   }, [patientId]);
 
+  /**
+   * Unsaved-progress detection for the wizard. `savedBaseline` tracks the last
+   * state known to be persisted (initial, patient selection, resume, or
+   * autosave); anything typed past it is at risk on a leave, so route
+   * navigation and tab close are guarded exactly like the edit page.
+   */
+  const wizardDirty = useMemo(
+    () => JSON.stringify(sections) !== JSON.stringify(savedBaseline),
+    [sections, savedBaseline],
+  );
+
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      wizardDirty && currentLocation.pathname !== nextLocation.pathname,
+  );
+
+  useEffect(() => {
+    if (!wizardDirty) return;
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault();
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [wizardDirty]);
+
+  // Draft autosave: shortly after the last edit, persist the wizard as a draft
+  // row (update in place when a draft is already open, insert otherwise) so a
+  // crash or lost connection never loses seven sections of clinical data.
+  // Silent on success and failure — the resume banner surfaces the draft.
+  useEffect(() => {
+    if (patientId == null || !wizardDirty || saving !== null || predicting) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          if (resume != null) {
+            await updateDraftAssessment(resume.id, sections, "draft");
+          } else {
+            await createAssessment({ patientId, status: "draft", sections });
+            const stored = await latestDraftForPatient(patientId);
+            setResume(stored);
+          }
+          setSavedBaseline(sections);
+        } catch (autosaveError) {
+          console.error("[palse] draft autosave failed", autosaveError);
+        }
+      })();
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [sections, patientId, wizardDirty, resume, saving, predicting]);
+
   const selectedPatient = useMemo(
     () => patients?.find((p) => p.id === patientId) ?? null,
     [patients, patientId],
@@ -275,12 +333,20 @@ export default function Dashboard() {
     setPatientId(id);
     const patient = patients?.find((p) => p.id === id);
     if (patient != null) {
-      patch("demographic", {
-        sex: patient.sex,
-        gestationalAgeWeeks: patient.gestationalAgeWeeks?.toString() ?? "",
-        birthWeightGrams: patient.birthWeightGrams?.toString() ?? "",
-        deliveryMode: patient.deliveryMode,
-      });
+      const nextSections: AssessmentSections = {
+        ...sections,
+        demographic: {
+          ...sections.demographic,
+          sex: patient.sex,
+          gestationalAgeWeeks: patient.gestationalAgeWeeks?.toString() ?? "",
+          birthWeightGrams: patient.birthWeightGrams?.toString() ?? "",
+          deliveryMode: patient.deliveryMode,
+        },
+      };
+      setSections(nextSections);
+      // Registry-sourced demographics persist with the next save/update —
+      // moving the unsaved-progress baseline keeps the leave-guard honest.
+      setSavedBaseline(nextSections);
     }
     setStepError(null);
   }
@@ -294,18 +360,24 @@ export default function Dashboard() {
     setPatients((prev) => [patient, ...(prev ?? [])]);
     setQuickCreateOpen(false);
     setPatientId(patient.id);
-    patch("demographic", {
-      sex: patient.sex,
-      gestationalAgeWeeks: patient.gestationalAgeWeeks?.toString() ?? "",
-      birthWeightGrams: patient.birthWeightGrams?.toString() ?? "",
-      deliveryMode: patient.deliveryMode,
-    });
+    const nextSections: AssessmentSections = {
+      ...sections,
+      demographic: {
+        ...sections.demographic,
+        sex: patient.sex,
+        gestationalAgeWeeks: patient.gestationalAgeWeeks?.toString() ?? "",
+        birthWeightGrams: patient.birthWeightGrams?.toString() ?? "",
+        deliveryMode: patient.deliveryMode,
+      },
+    };
+    setSections(nextSections);
+    setSavedBaseline(nextSections);
   }
 
   /** Loads the stored draft's seven sections into the builder. */
   function resumeDraft() {
     if (resume == null) return;
-    setSections({
+    const resumedSections: AssessmentSections = {
       demographic: resume.demographic,
       maternal: resume.maternal,
       neonatal: resume.neonatal,
@@ -313,7 +385,9 @@ export default function Dashboard() {
       laboratory: resume.laboratory,
       treatment: resume.treatment,
       comorbidities: resume.comorbidities,
-    });
+    };
+    setSections(resumedSections);
+    setSavedBaseline(resumedSections); // draft content is already persisted
     setResumeLoaded(true);
     setStepError(null);
     setEngineNotice(null);
@@ -412,6 +486,7 @@ export default function Dashboard() {
         // resume banner (the draft row is now a completed assessment).
         resetWizard();
       } else {
+        setSavedBaseline(sections); // the draft row now holds this snapshot
         setSaved({
           name:
             selectedPatient != null
@@ -436,6 +511,7 @@ export default function Dashboard() {
     setStep(1);
     setPatientId(null);
     setSections(EMPTY_SECTIONS);
+    setSavedBaseline(EMPTY_SECTIONS);
     setStepError(null);
     setResume(null);
     setResumeLoaded(false);
@@ -570,6 +646,31 @@ export default function Dashboard() {
           retryPending={predicting}
           onRetry={retryScoring}
         />
+      ) : null}
+
+      {blocker.state === "blocked" ? (
+        <Modal title="Leave without saving?" onClose={() => blocker.reset?.()}>
+          <p className="text-sm text-theme-ink-soft">
+            You have entered information that has not been saved yet. Leaving
+            this page will lose it.
+          </p>
+          <div className="mt-5 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => blocker.reset?.()}
+              className="rounded-lg border border-theme-line px-4 py-2 text-sm font-semibold text-theme-ink transition-colors hover:bg-theme-light-gray"
+            >
+              Stay and edit
+            </button>
+            <button
+              type="button"
+              onClick={() => blocker.proceed?.()}
+              className="rounded-lg bg-risk-high-fg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            >
+              Discard changes
+            </button>
+          </div>
+        </Modal>
       ) : null}
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">

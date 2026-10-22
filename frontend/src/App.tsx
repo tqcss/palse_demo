@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Routes, Route, useNavigate } from "react-router-dom";
 
 import { AuthSplash, GuestOnly, RequireAuth } from "./components/AuthGuard.tsx";
@@ -18,7 +18,7 @@ import Signin from "./pages/Signin.tsx";
 import Signup from "./pages/Signup.tsx";
 
 function App() {
-  const { recovering, clearRecovery, idling, clearIdle } = useAuth();
+  const { recovering, clearRecovery, idling, idleEndsAt, clearIdle } = useAuth();
   const navigate = useNavigate();
 
   // Password-recovery links land on the Site URL root; route into the reset
@@ -32,7 +32,7 @@ function App() {
 
   return (
     <>
-      {idling ? <IdleWarning onDismiss={clearIdle} /> : null}
+      {idling ? <IdleWarning idleEndsAt={idleEndsAt} onDismiss={clearIdle} /> : null}
       <Routes>
         <Route
           path="/signin"
@@ -82,13 +82,36 @@ function App() {
 }
 
 /** Visible during the 60 s before the idle auto sign-out fires. */
-function IdleWarning({ onDismiss }: { onDismiss: () => void }) {
+function IdleWarning({
+  idleEndsAt,
+  onDismiss,
+}: {
+  idleEndsAt: number | null;
+  onDismiss: () => void;
+}) {
+  const [remaining, setRemaining] = useState(() =>
+    idleEndsAt == null ? 0 : Math.max(0, Math.round((idleEndsAt - Date.now()) / 1000)),
+  );
+
+  useEffect(() => {
+    if (idleEndsAt == null) return;
+    const tick = () =>
+      setRemaining(Math.max(0, Math.round((idleEndsAt - Date.now()) / 1000)));
+    tick();
+    const interval = window.setInterval(tick, 1000);
+    return () => window.clearInterval(interval);
+  }, [idleEndsAt]);
+
   return (
     <div
       role="alert"
       className="fixed inset-x-0 bottom-6 z-50 mx-auto flex w-full max-w-md items-center justify-between gap-4 rounded-lg border border-risk-moderate-fg/30 bg-risk-moderate-bg px-4 py-3 text-sm text-risk-moderate-fg shadow-lg"
     >
-      <span>You&apos;ll be signed out shortly due to inactivity.</span>
+      <span>
+        {remaining > 0
+          ? `Signing out for inactivity in ${remaining} s.`
+          : "Signing out for inactivity…"}
+      </span>
       <button
         type="button"
         onClick={onDismiss}

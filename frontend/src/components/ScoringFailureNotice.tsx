@@ -46,7 +46,13 @@ export default function ScoringFailureNotice({
             engine is back online.
           </p>
           {error.kind === "server" ? (
-            <p className="text-xs opacity-80">{error.message}</p>
+            // Sanitized: status code only. The engine's raw detail stays in
+            // `message` for the console/log (the page logged the error object).
+            <p className="text-xs opacity-80">
+              {error.status != null
+                ? `The engine responded with an HTTP ${error.status} error.`
+                : HEADLINES.server}
+            </p>
           ) : null}
         </div>
         {onRetry != null ? (

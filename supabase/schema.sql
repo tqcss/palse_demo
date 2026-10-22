@@ -402,3 +402,71 @@ begin
     alter publication supabase_realtime add table public.vital_observations;
   end if;
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- 10. Soft delete + audit trail (schema v7)
+--     Deleting a patient used to hard-delete the row and cascade every
+--     assessment/reading. The registry now stamps `deleted_at` instead
+--     (reads filter it, the clinical rows stay intact for audit) and writes
+--     an audit_log entry with the acting user and the record counts shown in
+--     the confirmation dialog. details carry ids and counts only — no names,
+--     MRNs, or clinical values. Idempotent: safe to re-run with the rest of
+--     this file.
+--     Limitation: patients.mrn is a plain unique constraint, so an MRN cannot
+--     be reused while its soft-deleted row exists.
+-- ---------------------------------------------------------------------------
+alter table public.patients
+  add column if not exists deleted_at timestamptz;
+
+comment on column public.patients.deleted_at is
+  'Soft-delete stamp. The row (and its clinical data) is kept for audit; the registry filters it out.';
+
+drop policy if exists patients_team_select on public.patients;
+create policy patients_team_select
+  on public.patients
+  for select
+  to authenticated
+  using (deleted_at is null);
+
+create table if not exists public.audit_log (
+  id uuid primary key default gen_random_uuid(),
+  actor uuid not null
+    default auth.uid()
+    references auth.users (id) on delete cascade,
+  action text not null,
+  entity text not null,
+  entity_id uuid,
+  details jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  constraint audit_log_details_no_phi
+    check (
+      details::text !~* '"(mrn|first_name|last_name|first|last|notes)"\s*:'
+    )
+);
+
+comment on table public.audit_log is
+  'Append-only action trail. Written by the app after destructive or sensitive actions; no PHI in details (ids and counts only).';
+
+create index if not exists audit_log_actor_idx on public.audit_log (actor);
+create index if not exists audit_log_entity_idx
+  on public.audit_log (entity, entity_id);
+
+alter table public.audit_log enable row level security;
+
+drop policy if exists audit_log_team_select on public.audit_log;
+create policy audit_log_team_select
+  on public.audit_log
+  for select
+  to authenticated
+  using (true);
+
+drop policy if exists audit_log_insert_own on public.audit_log;
+create policy audit_log_insert_own
+  on public.audit_log
+  for insert
+  to authenticated
+  with check (actor = auth.uid());
+
+-- Deliberately no UPDATE/DELETE policies: the trail is append-only. Select
+-- and insert grants come from this file's privileges sections.
+

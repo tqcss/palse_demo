@@ -21,6 +21,8 @@ export interface AuthContextValue {
   recovering: boolean;
   /** True when the countdown banner before idle sign-out should show. */
   idling: boolean;
+  /** Epoch ms at which idle auto sign-out fires (while `idling`). */
+  idleEndsAt: number | null;
   signOut: () => Promise<void>;
   clearRecovery: () => void;
   clearIdle: () => void;

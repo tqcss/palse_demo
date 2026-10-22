@@ -18,10 +18,13 @@ export function rangeFieldError(
   if (value === "") {
     return opts.required === true ? `${opts.label} is required.` : null;
   }
-  if (!Number.isFinite(Number(value))) {
+  // Comma decimals ("36,5") are a common reflex in comma-decimal locales;
+  // normalize so the field isn't rejected before range checking.
+  const normalized = value.replace(",", ".");
+  if (!Number.isFinite(Number(normalized))) {
     return `${opts.label} must be a number.`;
   }
-  if (!withinRange(Number(value), opts.min, opts.max)) {
+  if (!withinRange(Number(normalized), opts.min, opts.max)) {
     return `${opts.label} must be between ${opts.min} and ${opts.max}.`;
   }
   return null;
