@@ -44,6 +44,8 @@ import type {
 import type { PredictionResult } from "../lib/ml.ts";
 import { engineConfigured, MlEngineError, runPrediction } from "../lib/ml.ts";
 import { vitalsError, labsError, rangeFieldError } from "../lib/clinicalValidation.ts";
+import { downloadScoredReport } from "../lib/pdfReport.ts";
+import type { ScoredReportContext } from "../lib/pdfReport.ts";
 import ScoringFailureNotice from "../components/ScoringFailureNotice.tsx";
 import { formatDateLabel, formatDateTimeLabel, formatPatientName } from "../lib/patient.ts";
 import type { Patient } from "../lib/patient.ts";
@@ -192,6 +194,10 @@ export default function Dashboard() {
   const [predicting, setPredicting] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
   const [result, setResult] = useState<PredictionResult | null>(null);
+  /** Downloadable snapshot (patient + scored inputs) for the PDF report;
+   * survives the post-completion wizard reset, cleared when the context
+   * switches to another patient. */
+  const [lastScored, setLastScored] = useState<ScoredReportContext | null>(null);
   const [saved, setSaved] = useState<{
     name: string;
     status: AssessmentStatus;
@@ -262,6 +268,7 @@ export default function Dashboard() {
       // the results panel is never read against the wrong child. It is
       // replaced by the next completed assessment's score.
       setResult(null);
+      setLastScored(null);
       setScoringFailure(null);
       setEngineNotice(null);
     }
@@ -281,6 +288,7 @@ export default function Dashboard() {
   function patientCreated(patient: Patient) {
     // Fresh scoring context, same as switching patients in step 1.
     setResult(null);
+    setLastScored(null);
     setScoringFailure(null);
     setEngineNotice(null);
     setPatients((prev) => [patient, ...(prev ?? [])]);
@@ -438,6 +446,7 @@ export default function Dashboard() {
     setEngineNotice(null);
     setScoringFailure(null);
     setResult(null);
+    setLastScored(null);
     resetWizard();
   }
 
@@ -453,6 +462,15 @@ export default function Dashboard() {
     if (accessToken == null) return;
     const prediction = await runPrediction(sections, accessToken);
     await savePrediction(assessmentId, patientId, prediction);
+    const patient = patients?.find((row) => row.id === patientId) ?? null;
+    setLastScored({
+      patientId,
+      patientName: patient != null ? formatPatientName(patient) : "Unknown patient",
+      mrn: patient?.mrn ?? null,
+      scoredAt: new Date().toISOString(),
+      sections,
+      result: prediction,
+    });
     setResult(prediction);
     setScoringFailure(null);
     setEngineNotice({
@@ -651,6 +669,7 @@ export default function Dashboard() {
             result={result}
             predicting={predicting}
             engineConfigured={engineConfigured()}
+            report={lastScored}
           />
         </aside>
       </div>
@@ -1358,14 +1377,16 @@ function ResultsPanel({
   result,
   predicting,
   engineConfigured,
+  report,
 }: {
   patient: Patient | null;
   result: PredictionResult | null;
   predicting: boolean;
   engineConfigured: boolean;
+  report: ScoredReportContext | null;
 }) {
   if (result != null) {
-    return <ScoredResultsPanel result={result} predicting={predicting} />;
+    return <ScoredResultsPanel result={result} predicting={predicting} report={report} />;
   }
 
   const intro = predicting
@@ -1442,10 +1463,29 @@ const DONUT_COLORS: Record<string, string> = {
 function ScoredResultsPanel({
   result,
   predicting,
+  report,
 }: {
   result: PredictionResult;
   predicting: boolean;
+  report: ScoredReportContext | null;
 }) {
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  async function handleDownload() {
+    if (downloading || report == null) return;
+    setDownloading(true);
+    setDownloadError(null);
+    try {
+      await downloadScoredReport(report);
+    } catch (error) {
+      console.error("[palse] report download failed", error);
+      setDownloadError("Could not generate the PDF — please try again.");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   const percent = Math.max(0, Math.min(100, result.probabilityPercent * 100));
   const color =
     DONUT_COLORS[result.riskLabel.split(" ")[0]] ?? DONUT_COLORS.MODERATE;
@@ -1518,6 +1558,29 @@ function ScoredResultsPanel({
         · {result.inferenceMs} ms
         {predicting ? " · rescoring…" : ""}
       </p>
+
+      {report != null ? (
+        <div className="flex flex-col gap-1.5">
+          <button
+            type="button"
+            disabled={downloading}
+            onClick={() => void handleDownload()}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-theme-maroon px-4 py-2 text-sm font-semibold text-theme-maroon transition-colors hover:bg-theme-maroon/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-maroon disabled:opacity-60"
+          >
+            <MsIcon
+              name={downloading ? "progress_activity" : "download"}
+              className="text-[18px]"
+              optical={20}
+            />
+            {downloading ? "Preparing PDF…" : "Download report (PDF)"}
+          </button>
+          {downloadError != null ? (
+            <p className="text-xs font-medium text-risk-high-fg" role="alert">
+              {downloadError}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
     </Panel>
   );
 }
