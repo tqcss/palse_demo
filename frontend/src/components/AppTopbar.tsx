@@ -87,9 +87,6 @@ const Topbar: ComponentType = function Topbar() {
           >
             {titleForPath(location.pathname)}
           </Link>
-          {/* <span className="hidden text-xs text-theme-gray sm:inline"> */}
-          {/*   • Neonatal Sepsis Prediction */}
-          {/* </span> */}
         </div>
 
         <Link

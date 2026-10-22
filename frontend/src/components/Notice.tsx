@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-export type NoticeTone = "info" | "success" | "warning" | "danger";
+type NoticeTone = "info" | "success" | "warning" | "danger";
 
 const TONES = {
   info: "border-sky-200 bg-sky-50 text-sky-900",

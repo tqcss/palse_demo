@@ -6,7 +6,7 @@
 
 export const MIN_PASSWORD_LENGTH = 12;
 
-export interface PasswordCheck {
+interface PasswordCheck {
   label: string;
   passed: boolean;
 }

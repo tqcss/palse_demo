@@ -24,15 +24,6 @@ export interface Patient {
   updatedAt: string;
 }
 
-export interface NewPatientInput {
-  firstName: string;
-  lastName: string;
-  sex?: Exclude<Sex, null> | null;
-  gestationalAgeWeeks?: number | null;
-  birthWeightGrams?: number | null;
-  mrn?: string | null;
-}
-
 export function formatPatientName(patient: Patient): string {
   return `${patient.firstName} ${patient.lastName}`.trim();
 }

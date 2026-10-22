@@ -1,9 +1,9 @@
 import type { Sex } from "./patient.ts";
 
-export type DeliveryMode = "vaginal" | "cesarean" | null;
+type DeliveryMode = "vaginal" | "cesarean" | null;
 
 /** Section 1 — Demographic & Perinatal. */
-export interface DemographicSection {
+interface DemographicSection {
   sex: Sex;
   gestationalAgeWeeks: string;
   birthWeightGrams: string;
