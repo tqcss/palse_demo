@@ -152,15 +152,27 @@ export default function Signin() {
         </PrimaryButton>
       </form>
 
-      <p className="mt-10 text-sm text-theme-gray">
-        Don&apos;t have an account?{" "}
-        <Link
-          to="/signup"
-          className="font-semibold text-theme-maroon underline-offset-4 hover:underline"
-        >
-          Create an account
-        </Link>
-      </p>
+      <div className="mt-8 flex flex-col gap-2 text-sm text-theme-gray">
+        <p>
+          Lost access to your password?{" "}
+          <Link
+            to="/reset-request"
+            className="font-semibold text-theme-maroon underline-offset-4 hover:underline"
+          >
+            Request a new temporary password
+          </Link>{" "}
+          from your administrator.
+        </p>
+        <p>
+          Administrator?{" "}
+          <Link
+            to="/admin/signin"
+            className="font-semibold text-theme-maroon underline-offset-4 hover:underline"
+          >
+            Use the admin sign-in
+          </Link>
+        </p>
+      </div>
     </AuthFormShell>
   );
 }

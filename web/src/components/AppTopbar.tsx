@@ -98,7 +98,8 @@ const Topbar: ComponentType = function Topbar() {
               {display}
             </div>
             <div className="text-xs text-theme-gray">
-              {profile?.role || profile?.department || "Clinical team"}
+              {profile?.role === "admin" ? "Administrator · " : ""}
+              {profile?.job_title || profile?.department || "Clinical team"}
             </div>
           </div>
           <span

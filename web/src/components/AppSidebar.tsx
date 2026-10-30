@@ -5,16 +5,20 @@ import BrandMastHead from "./BrandMastHead.tsx";
 import MsIcon from "./MsIcon.tsx";
 import { useAuth } from "../context/useAuth.ts";
 
-const NAV_ITEMS = [
-  { to: "/dashboard", label: "Dashboard", icon: "space_dashboard" },
-  { to: "/patients", label: "Patients", icon: "group" },
-  { to: "/reports", label: "Reports", icon: "monitoring" },
-];
-
 export default function AppSidebar() {
-  const { signOut } = useAuth();
+  const { signOut, profile } = useAuth();
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
+
+  // Administrators get a direct link to the org console.
+  const navItems = [
+    { to: "/dashboard", label: "Dashboard", icon: "space_dashboard" },
+    { to: "/patients", label: "Patients", icon: "group" },
+    { to: "/reports", label: "Reports", icon: "monitoring" },
+    ...(profile?.role === "admin"
+      ? [{ to: "/admin", label: "Admin console", icon: "manage_accounts" }]
+      : []),
+  ];
 
   async function handleLogout() {
     if (signingOut) return;
@@ -36,7 +40,7 @@ export default function AppSidebar() {
         </div>
 
         <nav className="flex flex-col gap-1.5" aria-label="Primary">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

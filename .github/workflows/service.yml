@@ -1,4 +1,4 @@
-# Inference-service checks. Kept separate from ci.yml (frontend quality
+# Inference-service checks. Kept separate from ci.yml (web quality
 # gate, which merges from the ci/config-github-actions branch) so the two
 # never conflict; only runs when the Python side changes.
 name: Service CI

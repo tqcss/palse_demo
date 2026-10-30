@@ -3,8 +3,9 @@ import type { ReactNode } from "react";
 import MsIcon from "./MsIcon.tsx";
 
 /**
- * "Check your inbox" confirmation screen shared by signup and the
- * forgot-password flow. Presentational only; resend logic lives in the page.
+ * "Check your inbox" confirmation screen shared by the admin-access request
+ * and the forgot-password flow. Presentational only; resend logic lives in the
+ * page.
  */
 export default function CheckInbox({
   email,

@@ -18,6 +18,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [recovering, setRecovering] = useState(false);
   const [idling, setIdling] = useState(false);
 
@@ -47,6 +48,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
       if (event === "SIGNED_OUT") {
         setProfile(null);
+        setProfileLoading(false);
         setRecovering(false);
         setIdling(false);
       } else if (event === "PASSWORD_RECOVERY") {
@@ -63,10 +65,31 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const userId = user?.id ?? null;
 
   // Profile row mirrors signup metadata via the database trigger.
+  const fetchProfile = useCallback(async (targetUserId: string): Promise<Profile | null> => {
+    setProfileLoading(true);
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", targetUserId)
+      .maybeSingle();
+    const fresh = (data as Profile | null) ?? null;
+    setProfile(fresh);
+    setProfileLoading(false);
+    return fresh;
+  }, []);
+
+  const refetchProfile = useCallback(() => {
+    return userId == null ? Promise.resolve(null) : fetchProfile(userId);
+  }, [userId, fetchProfile]);
+
   useEffect(() => {
-    if (userId == null) return;
+    if (userId == null) {
+      setProfileLoading(false);
+      return;
+    }
 
     let current = userId;
+    setProfileLoading(true);
     void supabase
       .from("profiles")
       .select("*")
@@ -75,6 +98,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       .then(({ data }) => {
         if (current !== userId) return; // user changed before the row arrived
         setProfile((data as Profile) ?? null);
+        setProfileLoading(false);
       });
   }, [userId]);
 
@@ -138,13 +162,27 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       session,
       profile,
       loading,
+      profileLoading,
       recovering,
       idling,
       signOut,
+      refetchProfile,
       clearRecovery,
       clearIdle,
     }),
-    [user, session, profile, loading, recovering, idling, signOut, clearRecovery, clearIdle],
+    [
+      user,
+      session,
+      profile,
+      loading,
+      profileLoading,
+      recovering,
+      idling,
+      signOut,
+      refetchProfile,
+      clearRecovery,
+      clearIdle,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

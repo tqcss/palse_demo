@@ -14,7 +14,7 @@ interface ProfileForm {
   firstName: string;
   lastName: string;
   department: string;
-  role: string;
+  jobTitle: string;
 }
 
 export default function ProfilePage() {
@@ -26,7 +26,7 @@ export default function ProfilePage() {
     firstName: "",
     lastName: "",
     department: "",
-    role: "",
+    jobTitle: "",
   });
   const [hydrated, setHydrated] = useState(false);
   const [pending, setPending] = useState(false);
@@ -41,8 +41,8 @@ export default function ProfilePage() {
     const last =
       profile?.last_name ?? (user?.user_metadata?.last_name as string | undefined) ?? "";
     const department = profile?.department ?? "";
-    const role = profile?.role ?? "";
-    setForm({ firstName: first, lastName: last, department, role });
+    const jobTitle = profile?.job_title ?? "";
+    setForm({ firstName: first, lastName: last, department, jobTitle });
     setHydrated(true);
   }, [hydrated, profile, user]);
 
@@ -81,7 +81,7 @@ export default function ProfilePage() {
             first_name: form.firstName.trim() || "Unknown",
             last_name: form.lastName.trim() || "Unknown",
             department: form.department.trim() === "" ? null : form.department.trim(),
-            role: form.role.trim() === "" ? null : form.role.trim(),
+            job_title: form.jobTitle.trim() === "" ? null : form.jobTitle.trim(),
           })
           .eq("id", profile.id);
         if (profileError != null) throw profileError;
@@ -139,18 +139,18 @@ export default function ProfilePage() {
             onChange={(event) => patch({ department: event.target.value })}
           />
           <FormInput
-            id="profile-role"
-            label="Role"
+            id="profile-job-title"
+            label="Job title"
             placeholder="e.g. Neonatologist"
-            value={form.role}
-            onChange={(event) => patch({ role: event.target.value })}
+            value={form.jobTitle}
+            onChange={(event) => patch({ jobTitle: event.target.value })}
           />
 
           <div className="flex flex-col gap-1">
             <span className="text-sm font-medium text-theme-gray">Email</span>
             <span className="text-sm text-theme-ink-soft">{email}</span>
             <span className="text-xs text-theme-gray">
-              Set at signup — used for account recovery.
+              Set by your administrator — ask them for new temporary passwords.
             </span>
           </div>
           {memberSince != null ? (

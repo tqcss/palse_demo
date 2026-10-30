@@ -86,12 +86,6 @@ export default function NotFound() {
           >
             {primaryAction.label}
           </Link>
-          <Link
-            to="/signup"
-            className="rounded-lg border border-theme-line px-5 py-2.5 text-sm font-semibold text-theme-ink transition-colors duration-150 hover:bg-theme-light-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-maroon"
-          >
-            Create an account
-          </Link>
         </div>
 
         <p className="text-xs text-theme-gray/80">

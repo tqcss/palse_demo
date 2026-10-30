@@ -1,70 +1,64 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-import AuthFormShell from "../components/AuthFormShell.tsx";
-import { AuthSplash } from "../components/AuthGuard.tsx";
-import CheckInbox from "../components/CheckInbox.tsx";
-import FormInput from "../components/FormInput.tsx";
-import Notice from "../components/Notice.tsx";
-import PasswordEye from "../components/PasswordEye.tsx";
-import PrimaryButton from "../components/PrimaryButton.tsx";
-import PasswordRequirements from "../components/PasswordRequirements.tsx";
-import TurnstileWidget from "../components/TurnstileWidget.tsx";
-import { isCaptchaEnabled } from "../lib/captcha.ts";
-import { useAuth } from "../context/useAuth";
-import { guide } from "../lib/authErrors.ts";
-import { MIN_PASSWORD_LENGTH, passwordPolicyMet } from "../lib/password.ts";
-import { isEmailFormat } from "../lib/validation.ts";
-import { supabase } from "../lib/supabase.ts";
+import AuthFormShell from "../../components/AuthFormShell.tsx";
+import CheckInbox from "../../components/CheckInbox.tsx";
+import FormInput from "../../components/FormInput.tsx";
+import Notice from "../../components/Notice.tsx";
+import PasswordEye from "../../components/PasswordEye.tsx";
+import PrimaryButton from "../../components/PrimaryButton.tsx";
+import PasswordRequirements from "../../components/PasswordRequirements.tsx";
+import TurnstileWidget from "../../components/TurnstileWidget.tsx";
+import { isCaptchaEnabled } from "../../lib/captcha.ts";
+import { guide } from "../../lib/authErrors.ts";
+import { MIN_PASSWORD_LENGTH, passwordPolicyMet } from "../../lib/password.ts";
+import { isEmailFormat } from "../../lib/validation.ts";
+import { supabase } from "../../lib/supabase.ts";
 
-interface SignupForm {
+interface RequestForm {
   firstName: string;
   lastName: string;
   email: string;
+  hospital: string;
   password: string;
   confirmPassword: string;
 }
 
-type FieldErrors = Partial<Record<keyof SignupForm, string>>;
+type FieldErrors = Partial<Record<keyof RequestForm, string>>;
 
-const blankForm: SignupForm = {
+const blankForm: RequestForm = {
   firstName: "",
   lastName: "",
   email: "",
+  hospital: "",
   password: "",
   confirmPassword: "",
 };
 
-const RESEND_COOLDOWN_MS = 60_000;
-
-export default function Signup() {
-  const { loading } = useAuth();
-  const [form, setForm] = useState<SignupForm>(blankForm);
+/**
+ * Administrator access request. Creates the auth account with
+ * `requested_role: "admin"` — the DB signup trigger marks it `pending`, and a
+ * superadmin confirms it (supabase/functions/superadmin-approvals). There is
+ * no clinician self-registration: clinicians are created by admins.
+ */
+export default function AdminRequestAccess() {
+  const [form, setForm] = useState<RequestForm>(blankForm);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
   const [sent, setSent] = useState<string | null>(null);
-  const [resendPending, setResendPending] = useState(false);
-  const [resendReadyAt, setResendReadyAt] = useState<number | null>(null);
-  const [resendNotice, setResendNotice] = useState<string | null>(null);
-  const [resendCaptchaToken, setResendCaptchaToken] = useState<string | null>(
-    null,
-  );
 
-  function update<K extends keyof SignupForm>(key: K, value: string) {
+  function update<K extends keyof RequestForm>(key: K, value: string) {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
   function validate(): boolean {
     const next: FieldErrors = {};
 
-    if (form.firstName.trim().length === 0)
-      next.firstName = "Enter your first name.";
-    if (form.lastName.trim().length === 0)
-      next.lastName = "Enter your last name.";
+    if (form.firstName.trim().length === 0) next.firstName = "Enter your first name.";
+    if (form.lastName.trim().length === 0) next.lastName = "Enter your last name.";
 
     if (form.email.trim().length === 0) {
       next.email = "Enter your email address.";
@@ -98,6 +92,8 @@ export default function Signup() {
           data: {
             first_name: form.firstName.trim(),
             last_name: form.lastName.trim(),
+            requested_role: "admin",
+            requested_hospital: form.hospital.trim() === "" ? null : form.hospital.trim(),
           },
           captchaToken: captchaToken ?? undefined,
         },
@@ -108,103 +104,37 @@ export default function Signup() {
         return;
       }
 
-      // Email confirmation is required: the email lands with the confirmation
-      // link and no session is returned yet.
+      // Email confirmation applies to admin accounts: the inbox link verifies
+      // the address before the superadmins can approve the request.
       setSent(form.email.trim());
-      setResendReadyAt(Date.now() + RESEND_COOLDOWN_MS);
     } catch (cause) {
-      console.error("[palse signup]", cause);
-      setFormError("Sign-up failed. Please try again.");
+      console.error("[palse admin request]", cause);
+      setFormError("Request failed. Please try again.");
     } finally {
       setPending(false);
     }
   }
-
-  async function handleResend() {
-    if (resendPending || sent == null) return;
-
-    const now = Date.now();
-    if (resendReadyAt != null && now < resendReadyAt) {
-      const seconds = Math.ceil((resendReadyAt - now) / 1000);
-      setResendNotice(
-        `Please wait ${seconds}s before requesting another email.`,
-      );
-      return;
-    }
-    if (isCaptchaEnabled() && resendCaptchaToken == null) {
-      setResendNotice("Complete the security check first.");
-      return;
-    }
-
-    setResendPending(true);
-    setResendNotice(null);
-    try {
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email: sent,
-        options: { captchaToken: resendCaptchaToken ?? undefined },
-      });
-
-      if (error != null) {
-        setResendNotice(guide(error));
-        return;
-      }
-
-      setResendNotice(
-        "Confirmation email sent. If it doesn't arrive, check your spam folder.",
-      );
-      setResendCaptchaToken(null);
-      setResendReadyAt(Date.now() + RESEND_COOLDOWN_MS);
-    } catch (cause) {
-      console.error("[palse signup resend]", cause);
-      setResendNotice(
-        "Could not resend the email. Please wait a moment and try again.",
-      );
-    } finally {
-      setResendPending(false);
-    }
-  }
-
-  if (loading) return <AuthSplash />;
 
   if (sent != null) {
     return (
       <AuthFormShell>
         <CheckInbox
           email={sent}
-          title="Check your inbox"
+          title="Confirm your email"
           description={
             <>
-              We sent a confirmation link to <strong>{sent}</strong>. Click it
-              to activate your account — link expires in 24 hours.
+              We sent a confirmation link to <strong>{sent}</strong>. After you
+              confirm it, your administrator request goes to the superadmins for
+              approval — you&apos;ll be able to sign in once they confirm you.
             </>
           }
         >
-          {resendNotice ? <Notice tone="info">{resendNotice}</Notice> : null}
-
-          <TurnstileWidget
-            className="mx-auto w-[286px] max-w-full"
-            onVerify={(token) => setResendCaptchaToken(token)}
-            onExpire={() => setResendCaptchaToken(null)}
-          />
-
-          <div className="flex items-center justify-center gap-3">
-            <PrimaryButton
-              className="w-auto min-w-40 flex-1"
-              pending={resendPending}
-              disabled={isCaptchaEnabled() && resendCaptchaToken == null}
-              onClick={handleResend}
-              type="button"
-            >
-              Resend email
-            </PrimaryButton>
-            <Link
-              to="/signin"
-              className="text-sm font-semibold text-theme-maroon underline-offset-4 hover:underline flex-1"
-            >
-              Back to sign in
-            </Link>
-          </div>
+          <Link
+            to="/admin/signin"
+            className="rounded-lg border border-theme-line px-5 py-2.5 text-center text-sm font-semibold text-theme-ink transition-colors hover:bg-theme-light-gray"
+          >
+            Go to sign in
+          </Link>
         </CheckInbox>
       </AuthFormShell>
     );
@@ -213,9 +143,10 @@ export default function Signup() {
   return (
     <AuthFormShell>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Create an account</h1>
+        <h1 className="text-2xl font-bold">Request administrator access</h1>
         <p className="mt-2 text-sm text-theme-gray">
-          Sign up to access the clinical dashboard.
+          Administrator accounts are created by request and confirmed by the
+          superadmins before you can organize a hospital.
         </p>
       </div>
 
@@ -224,7 +155,7 @@ export default function Signup() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormInput
-            id="first-name"
+            id="request-first-name"
             label="First name"
             name="firstName"
             autoComplete="given-name"
@@ -236,7 +167,7 @@ export default function Signup() {
             autoFocus
           />
           <FormInput
-            id="last-name"
+            id="request-last-name"
             label="Last name"
             name="lastName"
             autoComplete="family-name"
@@ -249,10 +180,9 @@ export default function Signup() {
         </div>
 
         <FormInput
-          id="email"
+          id="request-email"
           label="Email address"
-          hintClass="hidden [@media(min-height:800px)]:block"
-          hint="This email is used for account confirmation and password recovery."
+          hint="This email is used for confirmation, approval updates and password recovery."
           type="email"
           name="email"
           autoComplete="email"
@@ -263,11 +193,21 @@ export default function Signup() {
           disabled={pending}
         />
 
+        <FormInput
+          id="request-hospital"
+          label="Hospital or organization (optional)"
+          hint="Shown to the superadmins when reviewing the request."
+          name="hospital"
+          placeholder="e.g. St. Mary's Neonatal Unit"
+          value={form.hospital}
+          onChange={(event) => update("hospital", event.target.value)}
+          disabled={pending}
+        />
+
         <div>
           <FormInput
-            id="password"
+            id="request-password"
             label="Password"
-            hintClass="hidden [@media(min-height:800px)]:block"
             hint={`${MIN_PASSWORD_LENGTH}+ characters with lowercase and uppercase letters, numbers, and symbols.`}
             type={showPassword ? "text" : "password"}
             name="password"
@@ -288,7 +228,7 @@ export default function Signup() {
         </div>
 
         <FormInput
-          id="confirm-password"
+          id="request-confirm-password"
           label="Confirm password"
           type={showPassword ? "text" : "password"}
           name="confirmPassword"
@@ -306,18 +246,15 @@ export default function Signup() {
           onExpire={() => setCaptchaToken(null)}
         />
 
-        <PrimaryButton
-          pending={pending}
-          disabled={isCaptchaEnabled() && captchaToken == null}
-        >
-          Create account
+        <PrimaryButton pending={pending} disabled={isCaptchaEnabled() && captchaToken == null}>
+          Submit request
         </PrimaryButton>
       </form>
 
       <p className="mt-8 text-sm text-theme-gray">
-        Already have an account?{" "}
+        Already a confirmed administrator?{" "}
         <Link
-          to="/signin"
+          to="/admin/signin"
           className="font-semibold text-theme-maroon underline-offset-4 hover:underline"
         >
           Sign in
