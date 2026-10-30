@@ -432,29 +432,6 @@ exception
   when duplicate_object then null;
 end $$;
 
--- Caller helpers (SECURITY DEFINER so RLS evaluation can use them without
--- recursing into the profiles policies). Defined first: org RLS + column
--- defaults reference them.
-create or replace function public.current_org_id()
-returns uuid
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select org_id from public.profiles where id = auth.uid()
-$$;
-
-create or replace function public.current_app_role()
-returns public.user_role
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select role from public.profiles where id = auth.uid()
-$$;
-
 -- Organizations --------------------------------------------------------------
 create table if not exists public.organizations (
   id uuid primary key default gen_random_uuid(),
@@ -471,13 +448,6 @@ comment on table public.organizations is
   'A hospital / clinic group. All members (admins + clinicians) belong to exactly one organization; clinical data never crosses organizations.';
 
 alter table public.organizations enable row level security;
-
-drop policy if exists organizations_select_own on public.organizations;
-create policy organizations_select_own
-  on public.organizations
-  for select
-  to authenticated
-  using (id = public.current_org_id());
 
 drop trigger if exists organizations_touch_updated_at on public.organizations;
 create trigger organizations_touch_updated_at
@@ -543,6 +513,37 @@ create index if not exists profiles_role_idx on public.profiles (role, status);
 update public.profiles
 set email = (select u.email from auth.users u where u.id = profiles.id)
 where email is null;
+
+-- Caller helpers (SECURITY DEFINER so RLS evaluation can use them without
+-- recursing into the profiles policies). Must live after profiles.org_id
+-- exists: SQL-function bodies are fully analyzed at creation time.
+create or replace function public.current_org_id()
+returns uuid
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select org_id from public.profiles where id = auth.uid()
+$$;
+
+create or replace function public.current_app_role()
+returns public.user_role
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select role from public.profiles where id = auth.uid()
+$$;
+
+-- Organization RLS: members can read their own organization's record.
+drop policy if exists organizations_select_own on public.organizations;
+create policy organizations_select_own
+  on public.organizations
+  for select
+  to authenticated
+  using (id = public.current_org_id());
 
 -- Protect privileged columns: an authenticated user may edit their own row's
 -- display fields only. role / status / org_id change exclusively through the
