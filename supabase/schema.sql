@@ -796,7 +796,7 @@ select 'Pal.se Demo Hospital', public.generate_invite_code()
 where not exists (select 1 from public.organizations);
 
 update public.profiles
-set org_id = (select min(id) from public.organizations)
+set org_id = (select id from public.organizations order by created_at asc, id asc limit 1)
 where org_id is null;
 
 update public.patients p
@@ -813,15 +813,15 @@ where org_id is null;
 
 -- Residual nulls (deleted creators, stray rows) fall into the default org.
 update public.patients
-set org_id = (select min(id) from public.organizations)
+set org_id = (select id from public.organizations order by created_at asc, id asc limit 1)
 where org_id is null;
 
 update public.assessments
-set org_id = (select min(id) from public.organizations)
+set org_id = (select id from public.organizations order by created_at asc, id asc limit 1)
 where org_id is null;
 
 update public.vital_observations
-set org_id = (select min(id) from public.organizations)
+set org_id = (select id from public.organizations order by created_at asc, id asc limit 1)
 where org_id is null;
 
 -- RLS: org isolation replaces the team model. A row is visible only inside
