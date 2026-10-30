@@ -947,19 +947,22 @@ create policy audit_logs_admin_select
     and org_id = public.current_org_id()
   );
 
-create or replace function public.write_audit(entity_name text)
+create or replace function public.write_audit()
 returns trigger
 language plpgsql
 security definer
 set search_path = ''
 as $$
 declare
+  -- Trigger functions cannot declare named arguments: the entity name is
+  -- passed as a trigger argument and read through TG_ARGV.
+  v_entity text := tg_argv[0];
   v_row jsonb;
   v_org uuid;
 begin
   v_row := case when tg_op = 'DELETE' then to_jsonb(old) else to_jsonb(new) end;
   v_org := case
-    when entity_name = 'organization' then (v_row ->> 'id')::uuid
+    when v_entity = 'organization' then (v_row ->> 'id')::uuid
     else (v_row ->> 'org_id')::uuid
   end;
 
@@ -968,12 +971,12 @@ begin
     v_org,
     auth.uid(),
     auth.email(),
-    entity_name || case tg_op
+    v_entity || case tg_op
       when 'INSERT' then '.create'
       when 'UPDATE' then '.update'
       else '.delete'
     end,
-    entity_name,
+    v_entity,
     (v_row ->> 'id')::uuid,
     jsonb_build_object('op', tg_op, 'row', v_row)
   );
