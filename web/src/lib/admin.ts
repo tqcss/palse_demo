@@ -325,6 +325,9 @@ export function auditActionLabel(action: string): string {
   return AUDIT_ACTION_LABELS[action] ?? action;
 }
 
+/** All known action names (for the audit filter's suggestion list). */
+export const knownAuditActions: string[] = Object.keys(AUDIT_ACTION_LABELS);
+
 export async function listAuditLogs(filter: AuditLogFilter = {}): Promise<AuditLogEntry[]> {
   const { data, error } = await auditQuery(filter, false);
   if (error != null) throw error;
