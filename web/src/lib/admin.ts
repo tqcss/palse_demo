@@ -233,6 +233,39 @@ export async function listPendingResetRequests(orgId: string): Promise<PasswordR
 
 /* ------------------------------- Audit log -------------------------------- */
 
+/** Human copy for the server-generated audit actions (shared by admin pages). */
+const AUDIT_ACTION_LABELS: Record<string, string> = {
+  "patient.create": "Patient registered",
+  "patient.update": "Patient updated",
+  "patient.delete": "Patient deleted",
+  "assessment.create": "Assessment started",
+  "assessment.update": "Assessment saved",
+  "assessment.delete": "Assessment deleted",
+  "vitals.create": "Vitals recorded",
+  "vitals.update": "Vitals updated",
+  "vitals.delete": "Vitals deleted",
+  "account.create": "Clinician account created",
+  "account.temp_password": "Temporary password issued",
+  "account.disable": "Account disabled",
+  "account.enable": "Account re-enabled",
+  "account.create_rejected": "Account creation failed",
+  "organization.create": "Organization created",
+  "organization.update": "Organization updated",
+  "organization.delete": "Organization deleted",
+  "org.create": "Organization created (setup)",
+  "org.join": "Administrator joined via invite code",
+  "org.rotate_invite_code": "Invite code rotated",
+  "admin.requested": "Admin account requested",
+  "admin.approved": "Admin account approved",
+  "admin.rejected": "Admin account rejected",
+  "admin.self_signup": "Self-signup stored as clinician",
+  "password_reset.requested": "Password reset requested",
+};
+
+export function auditActionLabel(action: string): string {
+  return AUDIT_ACTION_LABELS[action] ?? action;
+}
+
 export async function listAuditLogs(filter: AuditLogFilter = {}): Promise<AuditLogEntry[]> {
   let query = supabase
     .from("audit_logs")

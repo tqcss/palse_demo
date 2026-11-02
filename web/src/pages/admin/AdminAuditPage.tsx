@@ -6,38 +6,14 @@ import Panel from "../../components/Panel.tsx";
 import PrimaryButton from "../../components/PrimaryButton.tsx";
 import { useAuth } from "../../context/useAuth.ts";
 import { guide } from "../../lib/authErrors.ts";
-import { type AuditLogFilter, type AuditLogEntry, listAuditLogs } from "../../lib/admin.ts";
+import {
+  type AuditLogFilter,
+  type AuditLogEntry,
+  auditActionLabel,
+  listAuditLogs,
+} from "../../lib/admin.ts";
 
 const PAGE_SIZE = 50;
-
-/** Human copy for the server-generated audit actions. */
-const ACTION_LABELS: Record<string, string> = {
-  "patient.create": "Patient registered",
-  "patient.update": "Patient updated",
-  "patient.delete": "Patient deleted",
-  "assessment.create": "Assessment started",
-  "assessment.update": "Assessment saved",
-  "assessment.delete": "Assessment deleted",
-  "vitals.create": "Vitals recorded",
-  "vitals.update": "Vitals updated",
-  "vitals.delete": "Vitals deleted",
-  "account.create": "Clinician account created",
-  "account.temp_password": "Temporary password issued",
-  "account.disable": "Account disabled",
-  "account.enable": "Account re-enabled",
-  "account.create_rejected": "Account creation failed",
-  "organization.create": "Organization created",
-  "organization.update": "Organization updated",
-  "organization.delete": "Organization deleted",
-  "org.create": "Organization created (setup)",
-  "org.join": "Administrator joined via invite code",
-  "org.rotate_invite_code": "Invite code rotated",
-  "password_reset.requested": "Password reset requested",
-};
-
-function actionLabel(action: string): string {
-  return ACTION_LABELS[action] ?? action;
-}
 
 function entityLabel(entity: AuditLogEntry["entity"]): string {
   switch (entity) {
@@ -238,7 +214,7 @@ export default function AdminAuditPage() {
                         ) : null}
                       </div>
                     </td>
-                    <td className="py-3 pr-4 text-theme-ink">{actionLabel(row.action)}</td>
+                    <td className="py-3 pr-4 text-theme-ink">{auditActionLabel(row.action)}</td>
                     <td className="py-3 pr-4 text-theme-ink-soft">{entityLabel(row.entity)}</td>
                     <td className="py-3 max-w-72 truncate text-xs text-theme-gray">
                       {row.entity_id != null ? row.entity_id : "—"}

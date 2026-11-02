@@ -28,6 +28,7 @@ import AdminSignin from "./pages/admin/AdminSignin.tsx";
 import AdminRequestAccess from "./pages/admin/AdminRequestAccess.tsx";
 import AdminOnboarding from "./pages/admin/AdminOnboarding.tsx";
 import AdminLayout from "./pages/admin/AdminLayout.tsx";
+import AdminOverviewPage from "./pages/admin/AdminOverviewPage.tsx";
 import AdminMembersPage from "./pages/admin/AdminMembersPage.tsx";
 import AdminAuditPage from "./pages/admin/AdminAuditPage.tsx";
 import AdminOrgPage from "./pages/admin/AdminOrgPage.tsx";
@@ -102,7 +103,7 @@ function App() {
             </RequireAdmin>
           }
         >
-          <Route index element={<Navigate replace to="/admin/members" />} />
+          <Route index element={<AdminOverviewPage />} />
           <Route path="members" element={<AdminMembersPage />} />
           <Route path="audit" element={<AdminAuditPage />} />
           <Route path="org" element={<AdminOrgPage />} />
