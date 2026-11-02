@@ -625,8 +625,10 @@ begin
     coalesce(nullif(btrim(new.raw_user_meta_data ->> 'first_name'), ''), 'Unknown'),
     coalesce(nullif(btrim(new.raw_user_meta_data ->> 'last_name'), ''), 'Unknown'),
     coalesce(new.email, ''),
-    case when wants_admin then 'admin' else 'clinician' end,
-    case when wants_admin then 'pending' else 'disabled' end
+    -- The CASE branches must be cast explicitly: all-unknown branches resolve
+    -- to text, and text -> enum has no implicit assignment cast (42804).
+    case when wants_admin then 'admin'::public.user_role else 'clinician'::public.user_role end,
+    case when wants_admin then 'pending'::public.account_status else 'disabled'::public.account_status end
   )
   on conflict (id) do nothing;
 
