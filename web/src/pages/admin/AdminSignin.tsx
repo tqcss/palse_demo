@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import AuthFormShell from "../../components/AuthFormShell.tsx";
 import FormInput from "../../components/FormInput.tsx";
@@ -27,7 +27,23 @@ const blankErrors: Errors = { email: null, password: null, form: null };
  */
 export default function AdminSignin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { loading } = useAuth();
+
+  // A guard bounced the user here while trying to reach a specific console
+  // page (e.g. an expired session): return them after a successful sign-in.
+  const wanted =
+    (location.state as { from?: { pathname?: string; search?: string } } | null)?.from ?? null;
+
+  // ?signedOut=1 is set by the console's Logout / an idle timeout. Shown once,
+  // then stripped from the URL so refresh lands on a clean form.
+  const [signedOutVisible] = useState(
+    () => new URLSearchParams(location.search).has("signedOut"),
+  );
+  useEffect(() => {
+    if (!signedOutVisible) return;
+    navigate("/admin/signin", { replace: true });
+  }, [signedOutVisible, navigate]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -69,7 +85,12 @@ export default function AdminSignin() {
 
       // The admin guards take it from here: pending accounts see the approval
       // screen, active admins without an org go to onboarding, the rest to /admin.
-      await navigate("/admin", { replace: true });
+      await navigate(
+        wanted?.pathname != null && wanted.pathname.startsWith("/admin")
+          ? `${wanted.pathname}${wanted.search ?? ""}`
+          : "/admin",
+        { replace: true },
+      );
     } catch (cause) {
       console.error("[palse admin signin]", cause);
       setErrors({ ...blankErrors, form: "Sign-in failed. Please try again." });
@@ -94,6 +115,12 @@ export default function AdminSignin() {
           Manage your organization&apos;s accounts, membership and audit trail.
         </p>
       </div>
+
+      {signedOutVisible ? (
+        <Notice tone="info" className="mb-4">
+          You&apos;ve been signed out. Sign in again to continue.
+        </Notice>
+      ) : null}
 
       <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
         {errors.form ? <Notice tone="danger">{errors.form}</Notice> : null}

@@ -11,6 +11,8 @@
 
   --color-theme-maroon: #5b1616;
   --color-theme-maroon-hover: #6f1d1d;
+  /* ~8% maroon tint for hover/active fills over white surfaces. */
+  --color-theme-maroon-soft: rgb(91 22 22 / 8%);
   --color-theme-white: #fbf8f5;
   --color-theme-light-gray: #f3f2ee;
   --color-theme-gray: #9a8f8c;
@@ -29,6 +31,14 @@
   --color-risk-moderate-fg: #9a5b00;
   --color-risk-low-bg: #e8f5ee;
   --color-risk-low-fg: #1f7a45;
+
+  /* Cards & controls: soft warm shadow + consistent radii. Tailwind v4
+     generates rounded-card/rounded-control/shadow-card from these. */
+  --radius-card: 16px;
+  --radius-control: 10px;
+  --shadow-card:
+    0 1px 2px rgb(91 22 22 / 6%),
+    0 10px 28px -16px rgb(15 23 32 / 14%);
 }
 
 @layer base {
@@ -44,12 +54,20 @@
     color: var(--color-theme-ink-soft);
   }
 
+  /* The selection tint referenced --color-theme-crimson, which never existed;
+     the theme maroon is the intended accent. */
   ::selection {
     background-color: color-mix(
       in srgb,
-      var(--color-theme-crimson) 18%,
+      var(--color-theme-maroon) 18%,
       transparent
     );
+  }
+
+  /* One visible focus ring everywhere (maroon, 2px, 2px offset). */
+  :focus-visible {
+    outline: 2px solid var(--color-theme-maroon);
+    outline-offset: 2px;
   }
 
   * {
@@ -71,6 +89,19 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background-color: rgba(15, 23, 32, 0.28);
+  }
+}
+
+/* Respect the OS reduced-motion preference: transitions and animations
+   (spinners keep their essential state, they just no longer animate). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

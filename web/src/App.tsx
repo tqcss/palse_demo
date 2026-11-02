@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Navigate, Routes, Route, useNavigate } from "react-router-dom";
 
 import {
@@ -9,6 +9,8 @@ import {
   RequireAuth,
 } from "./components/AuthGuard.tsx";
 import AppLayout from "./components/AppLayout.tsx";
+import ErrorBoundary from "./components/ui/ErrorBoundary.tsx";
+import { AdminPageSkeleton } from "./components/ui/Skeleton.tsx";
 import { useAuth } from "./context/useAuth";
 import { isAdminProfile } from "./context/auth-context.ts";
 import ChangeTempPassword from "./pages/ChangeTempPassword.tsx";
@@ -28,10 +30,23 @@ import AdminSignin from "./pages/admin/AdminSignin.tsx";
 import AdminRequestAccess from "./pages/admin/AdminRequestAccess.tsx";
 import AdminOnboarding from "./pages/admin/AdminOnboarding.tsx";
 import AdminLayout from "./pages/admin/AdminLayout.tsx";
-import AdminOverviewPage from "./pages/admin/AdminOverviewPage.tsx";
-import AdminMembersPage from "./pages/admin/AdminMembersPage.tsx";
-import AdminAuditPage from "./pages/admin/AdminAuditPage.tsx";
-import AdminOrgPage from "./pages/admin/AdminOrgPage.tsx";
+
+/* Admin pages are code-split: the console loads its chunk on first visit. */
+const AdminOverviewPage = lazy(() => import("./pages/admin/AdminOverviewPage.tsx"));
+const AdminMembersPage = lazy(() => import("./pages/admin/AdminMembersPage.tsx"));
+const AdminAuditPage = lazy(() => import("./pages/admin/AdminAuditPage.tsx"));
+const AdminOrgPage = lazy(() => import("./pages/admin/AdminOrgPage.tsx"));
+const AdminProfilePage = lazy(() => import("./pages/admin/AdminProfilePage.tsx"));
+const AdminNotFound = lazy(() => import("./pages/admin/AdminNotFound.tsx"));
+
+/** Admin lazy-page wrapper: skeleton fallback + retryable error boundary. */
+function AdminSection({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<AdminPageSkeleton />}>
+      <ErrorBoundary>{children}</ErrorBoundary>
+    </Suspense>
+  );
+}
 
 function App() {
   const { recovering, clearRecovery, idling, clearIdle } = useAuth();
@@ -103,10 +118,16 @@ function App() {
             </RequireAdmin>
           }
         >
-          <Route index element={<AdminOverviewPage />} />
-          <Route path="members" element={<AdminMembersPage />} />
-          <Route path="audit" element={<AdminAuditPage />} />
-          <Route path="org" element={<AdminOrgPage />} />
+          <Route index element={<AdminSection><AdminOverviewPage /></AdminSection>} />
+          <Route path="members" element={<AdminSection><AdminMembersPage /></AdminSection>} />
+          <Route path="audit-log" element={<AdminSection><AdminAuditPage /></AdminSection>} />
+          <Route path="organization" element={<AdminSection><AdminOrgPage /></AdminSection>} />
+          <Route path="profile" element={<AdminSection><AdminProfilePage /></AdminSection>} />
+          {/* Route renames from the first revision — kept as redirects. */}
+          <Route path="audit" element={<Navigate replace to="/admin/audit-log" />} />
+          <Route path="org" element={<Navigate replace to="/admin/organization" />} />
+          {/* Unknown console sub-routes: branded 404 inside the shell. */}
+          <Route path="*" element={<AdminSection><AdminNotFound /></AdminSection>} />
         </Route>
 
         {/* First sign-in with an issued temporary password. */}

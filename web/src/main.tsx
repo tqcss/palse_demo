@@ -5,6 +5,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import "./index.css";
 import App from "./App.tsx";
 import AuthProvider from "./context/AuthContext.tsx";
+import { ToastProvider } from "./components/ui/toast.tsx";
 
 // Data router (React Router v7): enables useBlocker for the unsaved-changes
 // guard on the update-patient page. App keeps its internal <Routes> tree, so
@@ -15,9 +16,11 @@ const router = createBrowserRouter([
   {
     path: "*",
     element: (
-      <AuthProvider>
-        <App />
-      </AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </ToastProvider>
     ),
   },
 ]);

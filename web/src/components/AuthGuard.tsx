@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import type { ReactNode } from "react";
 import { useState } from "react";
 
@@ -129,7 +129,7 @@ export function RequireAdmin({ children }: { children: ReactNode }) {
     );
   }
   if (profile.role !== "admin") {
-    return <Navigate replace to="/dashboard" />;
+    return <NoAccess />;
   }
   if (profile.status === "pending") {
     return <AwaitingApproval />;
@@ -225,6 +225,36 @@ export function AwaitingApproval() {
         <p className="w-full text-xs text-risk-moderate-fg">{checkError}</p>
       ) : null}
     </BlockedScreen>
+  );
+}
+
+/**
+ * Friendly "no access" screen for a signed-in non-admin who opens /admin/*.
+ * Offers the way back to the clinical app instead of a silent redirect.
+ */
+export function NoAccess() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-theme-maroon px-6 py-16 text-center">
+      <BrandMastHead />
+      <div className="mt-2 flex h-14 w-14 items-center justify-center rounded-full bg-theme-white/10">
+        <MsIcon name="lock" className="text-[28px] text-theme-white" optical={28} />
+      </div>
+      <div className="max-w-md">
+        <h1 className="text-xl font-bold text-theme-white">You don&apos;t have access</h1>
+        <p className="mt-2 text-sm leading-relaxed text-theme-white/70">
+          The administration console is only available to approved
+          administrators of an organization. Your account is a clinician
+          account — continue in the clinical app.
+        </p>
+      </div>
+      <Link
+        to="/dashboard"
+        className="mt-2 inline-flex items-center gap-2 rounded-lg bg-theme-white px-4 py-2.5 text-sm font-semibold text-theme-maroon transition-colors hover:bg-theme-white/90 focus-visible:outline-2 focus-visible:outline-theme-white"
+      >
+        <MsIcon name="medical_services" className="text-[18px]" optical={20} />
+        Open the clinical app
+      </Link>
+    </div>
   );
 }
 
