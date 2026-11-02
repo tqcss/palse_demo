@@ -645,7 +645,9 @@ begin
                          'last_name', new.raw_user_meta_data ->> 'last_name')
     );
   exception when others then
-    null;
+    -- Logged in Postgres logs rather than swallowed silently — still saved
+    -- best-effort: never blocks account creation.
+    raise warning 'handle_new_user: audit write failed (%), skipping', sqlerrm;
   end;
   return new;
 end;
