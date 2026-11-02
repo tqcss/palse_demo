@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import MsIcon from "./MsIcon.tsx";
+import MsIcon from "../MsIcon.tsx";
 
 /** Icon-based empty state (or illustrated: icon inside a large cream circle). */
 export default function EmptyState({
