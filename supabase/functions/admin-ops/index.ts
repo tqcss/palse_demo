@@ -12,6 +12,8 @@
 //   reset_temp_password { temp_password, clinician_id? | reset_request_id? }
 //   disable_member      { clinician_id }
 //   enable_member       { clinician_id }
+//   update_member       { member_id, first_name, last_name, department?, job_title? }
+//   resolve_reset_request { reset_request_id }  — dismiss without a password
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const CORS_HEADERS = {
@@ -306,6 +308,96 @@ Deno.serve(async (req: Request): Promise<Response> => {
         await audit(service, caller, disabling ? "account.disable" : "account.enable", clinicianId, {
           email: member.email,
         });
+        return json({ ok: true });
+      }
+
+      case "update_member": {
+        const memberId: string | null = body.member_id ?? null;
+        if (memberId == null) return json({ error: "Missing member_id." }, 400);
+        for (const check of [
+          nameOrTitleProblems(body.first_name, "First name"),
+          nameOrTitleProblems(body.last_name, "Last name"),
+        ]) {
+          if (check != null) return json({ error: check }, 400);
+        }
+        const optionalText = (value: unknown): string | null =>
+          typeof value === "string" && value.trim() !== "" ? value.trim() : null;
+        if (optionalText(body.department) != null && typeof body.department === "string" &&
+            body.department.trim().length > 100) {
+          return json({ error: "Department must be 1-100 characters." }, 400);
+        }
+        if (optionalText(body.job_title) != null && typeof body.job_title === "string" &&
+            body.job_title.trim().length > 100) {
+          return json({ error: "Job title must be 1-100 characters." }, 400);
+        }
+
+        const { data: member, error: memberError } = await service
+          .from("profiles")
+          .select("id, email, role, status, org_id")
+          .eq("id", memberId)
+          .maybeSingle();
+        if (memberError != null || member == null) {
+          return json({ error: "Member not found." }, 404);
+        }
+        if (member.org_id !== caller.org_id || member.role !== "clinician") {
+          return json({ error: "This member is outside your organization." }, 403);
+        }
+
+        const { error: updateError } = await service
+          .from("profiles")
+          .update({
+            first_name: String(body.first_name).trim(),
+            last_name: String(body.last_name).trim(),
+            department: optionalText(body.department),
+            job_title: optionalText(body.job_title),
+          })
+          .eq("id", memberId);
+        if (updateError != null) {
+          return json({ error: "Could not save the details. Try again." }, 400);
+        }
+
+        await audit(service, caller, "account.update", memberId, {
+          email: member.email,
+          first_name: String(body.first_name).trim(),
+          last_name: String(body.last_name).trim(),
+        });
+        return json({ ok: true });
+      }
+
+      case "resolve_reset_request": {
+        const resetRequestId: string | null = body.reset_request_id ?? null;
+        if (resetRequestId == null) {
+          return json({ error: "Missing reset_request_id." }, 400);
+        }
+
+        const { data: requestRow, error: requestError } = await service
+          .from("password_reset_requests")
+          .select("id, clinician_id, org_id, status")
+          .eq("id", resetRequestId)
+          .maybeSingle();
+        if (requestError != null || requestRow == null) {
+          return json({ error: "Reset request not found." }, 404);
+        }
+        if (requestRow.org_id !== caller.org_id) {
+          return json({ error: "Reset request belongs to another organization." }, 403);
+        }
+        if (requestRow.status !== "pending") {
+          return json({ error: "This reset request was already handled." }, 400);
+        }
+
+        const { error: resolveError } = await service
+          .from("password_reset_requests")
+          .update({
+            status: "cancelled",
+            resolved_by: caller.id,
+            resolved_at: new Date().toISOString(),
+          })
+          .eq("id", resetRequestId);
+        if (resolveError != null) {
+          return json({ error: "Could not dismiss the request. Try again." }, 400);
+        }
+
+        await audit(service, caller, "password_reset.dismissed", resetRequestId, { requested: true });
         return json({ ok: true });
       }
 

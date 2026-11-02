@@ -69,6 +69,31 @@ export interface AuditLogFilter {
   offset?: number;
 }
 
+/** One page of audit rows + the exact filtered total (server-side count). */
+export interface AuditLogPage {
+  rows: AuditLogEntry[];
+  total: number;
+}
+
+function auditQuery(filter: AuditLogFilter, withCount: boolean) {
+  let query = supabase
+    .from("audit_logs")
+    .select("*", withCount ? { count: "exact" } : undefined)
+    .order("created_at", { ascending: false })
+    .range(filter.offset ?? 0, (filter.offset ?? 0) + (filter.limit ?? 100) - 1);
+
+  if (filter.entity != null) query = query.eq("entity", filter.entity);
+  if (filter.action != null && filter.action.trim() !== "") {
+    query = query.ilike("action", `%${filter.action.trim()}%`);
+  }
+  if (filter.actorEmail != null && filter.actorEmail.trim() !== "") {
+    query = query.ilike("actor_email", `%${filter.actorEmail.trim()}%`);
+  }
+  if (filter.fromIso != null) query = query.gte("created_at", filter.fromIso);
+  if (filter.toIso != null) query = query.lte("created_at", filter.toIso);
+  return query;
+}
+
 /* --------------------------- Temporary password --------------------------- */
 
 const TEMP_ALPHABETS = ["abcdefghijkmnpqrstuvwxyz", "ABCDEFGHJKLMNPQRSTUVWXYZ", "23456789", "!@#$%^&*"];
@@ -209,6 +234,25 @@ export async function rotateInviteCode(): Promise<string> {
   return data as string;
 }
 
+/** Editable detail fields of a member (privileged, same-org clinicians). */
+export function updateMember(
+  memberId: string,
+  patch: {
+    firstName: string;
+    lastName: string;
+    department?: string | null;
+    jobTitle?: string | null;
+  },
+): Promise<AdminOpsResponse> {
+  return callAdminOps("update_member", {
+    member_id: memberId,
+    first_name: patch.firstName,
+    last_name: patch.lastName,
+    department: patch.department ?? null,
+    job_title: patch.jobTitle ?? null,
+  });
+}
+
 /* --------------------------- Password reset flow --------------------------- */
 
 /** Public (anon-allowed) request: clinician asks their admin for a temp password. */
@@ -229,6 +273,20 @@ export async function listPendingResetRequests(orgId: string): Promise<PasswordR
     .order("created_at", { ascending: false });
   if (error != null) throw error;
   return (data ?? []) as PasswordResetRequest[];
+}
+
+/** Dismiss a reset request without issuing a password (marked cancelled). */
+export function dismissResetRequest(requestId: string): Promise<AdminOpsResponse> {
+  return callAdminOps("resolve_reset_request", { reset_request_id: requestId });
+}
+
+/** Number of patients in the caller's organization (RLS-scoped count). */
+export async function countPatients(): Promise<number> {
+  const { count, error } = await supabase
+    .from("patients")
+    .select("id", { count: "exact", head: true });
+  if (error != null) throw error;
+  return count ?? 0;
 }
 
 /* ------------------------------- Audit log -------------------------------- */
@@ -260,6 +318,7 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   "admin.rejected": "Admin account rejected",
   "admin.self_signup": "Self-signup stored as clinician",
   "password_reset.requested": "Password reset requested",
+  "password_reset.dismissed": "Password reset request dismissed",
 };
 
 export function auditActionLabel(action: string): string {
@@ -267,23 +326,84 @@ export function auditActionLabel(action: string): string {
 }
 
 export async function listAuditLogs(filter: AuditLogFilter = {}): Promise<AuditLogEntry[]> {
-  let query = supabase
-    .from("audit_logs")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .range(filter.offset ?? 0, (filter.offset ?? 0) + (filter.limit ?? 100) - 1);
-
-  if (filter.entity != null) query = query.eq("entity", filter.entity);
-  if (filter.action != null && filter.action.trim() !== "") {
-    query = query.ilike("action", `%${filter.action.trim()}%`);
-  }
-  if (filter.actorEmail != null && filter.actorEmail.trim() !== "") {
-    query = query.ilike("actor_email", `%${filter.actorEmail.trim()}%`);
-  }
-  if (filter.fromIso != null) query = query.gte("created_at", filter.fromIso);
-  if (filter.toIso != null) query = query.lte("created_at", filter.toIso);
-
-  const { data, error } = await query;
+  const { data, error } = await auditQuery(filter, false);
   if (error != null) throw error;
   return (data ?? []) as AuditLogEntry[];
 }
+
+/** Server-paged audit list with the exact number of matching rows. */
+export async function listAuditLogsPage(filter: AuditLogFilter = {}): Promise<AuditLogPage> {
+  const { data, error, count } = await auditQuery(filter, true);
+  if (error != null) throw error;
+  return { rows: (data ?? []) as AuditLogEntry[], total: count ?? 0 };
+}
+
+/** Up to `limit` rows of the currently filtered view (for CSV export). */
+export async function exportAuditLogs(
+  filter: AuditLogFilter = {},
+  limit = 1000,
+): Promise<AuditLogEntry[]> {
+  const { data, error } = await auditQuery({ ...filter, offset: 0, limit }, false);
+  if (error != null) throw error;
+  return (data ?? []) as AuditLogEntry[];
+}
+
+/* --------------------------- Audit presentation ---------------------------- */
+
+export type AuditCategory = AuditLogEntry["entity"];
+
+export interface AuditCategoryMeta {
+  label: string;
+  icon: string;
+}
+
+/** Icon + label per audit category (no colors: tones live in Badge tiers). */
+export function auditCategoryMeta(category: AuditCategory): AuditCategoryMeta {
+  switch (category) {
+    case "patient": return { label: "Patients", icon: "personal_injury" };
+    case "assessment": return { label: "Assessments", icon: "labs" };
+    case "vitals": return { label: "Vitals", icon: "monitor_heart" };
+    case "account": return { label: "Accounts", icon: "manage_accounts" };
+    case "organization": return { label: "Organization", icon: "apartment" };
+    case "password_reset": return { label: "Password resets", icon: "key" };
+  }
+}
+
+/** Sentence describing what the entry did ("Issued a temporary password for…"). */
+export function describeAuditEntry(entry: AuditLogEntry): string {
+  const who = auditActionLabel(entry.action);
+  const row = (entry.metadata?.row ?? {}) as Record<string, unknown>;
+  const meta = entry.metadata ?? {};
+
+  const rowName = (): string | null => {
+    const first = typeof row.first_name === "string" ? row.first_name : null;
+    const last = typeof row.last_name === "string" ? row.last_name : null;
+    const name = [first, last].filter(Boolean).join(" ").trim();
+    if (name !== "") return name;
+    if (typeof row.email === "string" && row.email !== "") return row.email;
+    if (typeof row.name === "string" && row.name !== "") return row.name;
+    return null;
+  };
+
+  switch (entry.entity) {
+    case "patient": {
+      const name = rowName();
+      return who + (name != null ? ` — ${name}` : "");
+    }
+    case "account":
+      return who + (() => {
+        const name = rowName() ?? (typeof meta.email === "string" ? meta.email : null);
+        return name != null ? ` — ${name}` : "";
+      })();
+    case "organization": {
+      const name = rowName();
+      return who + (name != null ? ` — ${name}` : "");
+    }
+    case "vitals": {
+      return who + " — vital readings updated";
+    }
+    default:
+      return who;
+  }
+}
+
