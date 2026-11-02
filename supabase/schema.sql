@@ -627,19 +627,26 @@ begin
     coalesce(new.email, ''),
     case when wants_admin then 'admin' else 'clinician' end,
     case when wants_admin then 'pending' else 'disabled' end
-  );
+  )
+  on conflict (id) do nothing;
 
-  insert into public.audit_logs (org_id, actor_id, actor_email, action, entity, entity_id, metadata)
-  values (
-    null,
-    null,
-    new.email,
-    case when wants_admin then 'admin.requested' else 'account.self_signup' end,
-    'account',
-    new.id,
-    jsonb_build_object('first_name', new.raw_user_meta_data ->> 'first_name',
-                       'last_name', new.raw_user_meta_data ->> 'last_name')
-  );
+  -- Best-effort audit entry: account creation must never fail because of the
+  -- audit trail (e.g. during partially-applied schema migrations).
+  begin
+    insert into public.audit_logs (org_id, actor_id, actor_email, action, entity, entity_id, metadata)
+    values (
+      null,
+      null,
+      new.email,
+      case when wants_admin then 'admin.requested' else 'account.self_signup' end,
+      'account',
+      new.id,
+      jsonb_build_object('first_name', new.raw_user_meta_data ->> 'first_name',
+                         'last_name', new.raw_user_meta_data ->> 'last_name')
+    );
+  exception when others then
+    null;
+  end;
   return new;
 end;
 $$;
