@@ -10,7 +10,7 @@ export default function SideHero() {
           style={{
             // Brand-tinted ghost in the maroon tone family (was an off-brand red).
             background:
-              "radial-gradient(circle, var(--color-theme-maroon-soft) 0%, rgba(0, 0, 0, 0) 55%)",
+              "radial-gradient(circle, var(--color-theme-maroon-soft) 0%, transparent 55%)",
           }}
         />
         <img

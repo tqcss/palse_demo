@@ -26,6 +26,16 @@ import ProfileSecurityPage from "./pages/ProfileSecurityPage.tsx";
 import ReportsPage from "./pages/ReportsPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import Signin from "./pages/Signin.tsx";
+
+/* Dev-only component gallery (UI QA). Static import.meta.env.DEV check makes
+   the chunk unreachable in production builds — never bundled, never routed. */
+const Styleguide = import.meta.env.DEV
+  ? lazy(() => import("./pages/Styleguide.tsx"))
+  : null;
+
+function DevStyleguide() {
+  return Styleguide != null ? <Styleguide /> : <NotFound />;
+}
 import AdminSignin from "./pages/admin/AdminSignin.tsx";
 import AdminRequestAccess from "./pages/admin/AdminRequestAccess.tsx";
 import AdminOnboarding from "./pages/admin/AdminOnboarding.tsx";
@@ -165,6 +175,10 @@ function App() {
         </Route>
 
         <Route path="/" element={<HomeRedirect />} />
+        {/* Dev-only styleguide: component gallery for visual QA. */}
+        {import.meta.env.DEV ? (
+          <Route path="/dev/styleguide" element={<DevStyleguide />} />
+        ) : null}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
