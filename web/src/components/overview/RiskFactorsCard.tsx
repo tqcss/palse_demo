@@ -23,10 +23,16 @@ export default function RiskFactorsCard() {
     <CardShell>
       <div className="mb-5 flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-theme-cream">
-          <MsIcon name="ecg_heart" className="text-[20px] text-theme-maroon" optical={22} />
+          <MsIcon
+            name="ecg_heart"
+            className="text-[20px] text-theme-maroon"
+            optical={22}
+          />
         </span>
         <div>
-          <h2 className="text-base font-bold text-theme-ink">{RISK_FACTORS_TITLE}</h2>
+          <h2 className="text-base font-bold text-theme-ink">
+            {RISK_FACTORS_TITLE}
+          </h2>
           <p className="text-xs text-theme-gray">{RISK_FACTORS_SUBTITLE}</p>
         </div>
       </div>
@@ -45,7 +51,11 @@ export default function RiskFactorsCard() {
       </div>
 
       <footer className="mt-4 flex items-start gap-2 border-t border-theme-line pt-3 text-[11px] leading-relaxed text-theme-gray">
-        <MsIcon name="info" className="mt-[1px] shrink-0 text-[14px] text-theme-maroon" optical={16} />
+        <MsIcon
+          name="info"
+          className="mt-[1px] shrink-0 text-[14px] text-theme-maroon"
+          optical={16}
+        />
         {/* TODO(clinical-review): this disclaimer must stay visible. */}
         {RISK_FACTORS_DISCLAIMER}
       </footer>
@@ -84,10 +94,14 @@ function FactorCard({ factor }: { factor: RiskFactorCard }) {
           className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${TIER_DOT_CLASS[factor.accent]}`}
         />
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-theme-ink">{factor.title}</div>
+          <div className="text-sm font-semibold text-theme-ink">
+            {factor.title}
+          </div>
           <div className="text-xs text-theme-gray">{factor.detail}</div>
           {factor.subline ? (
-            <div className="mt-1 text-xs font-semibold text-theme-ink-soft">{factor.subline}</div>
+            <div className="mt-1 text-xs font-semibold text-theme-ink-soft">
+              {factor.subline}
+            </div>
           ) : null}
 
           {/* Full citation on hover/focus/click; grid-rows animation keeps it
@@ -95,7 +109,9 @@ function FactorCard({ factor }: { factor: RiskFactorCard }) {
           <div
             className={[
               "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
-              expanded ? "[grid-template-rows:1fr] opacity-100" : "[grid-template-rows:0fr] opacity-0",
+              expanded
+                ? "[grid-template-rows:1fr] opacity-100"
+                : "[grid-template-rows:0fr] opacity-0",
             ].join(" ")}
           >
             <div className="min-h-0 overflow-hidden">

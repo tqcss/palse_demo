@@ -56,7 +56,9 @@ export default function RiskOverviewSection() {
             aria-hidden
           />
           <span className="text-xs font-semibold text-theme-gray">
-            {hidden ? "Population & risk-factor overview is hidden" : "Population & risk-factor overview"}
+            {hidden
+              ? "Population & risk-factor overview is hidden"
+              : "Population & risk-factor overview"}
           </span>
         </span>
         <button
@@ -84,7 +86,9 @@ export default function RiskOverviewSection() {
         aria-hidden={hidden}
         className={[
           "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
-          hidden ? "[grid-template-rows:0fr] opacity-0" : "[grid-template-rows:1fr] opacity-100",
+          hidden
+            ? "[grid-template-rows:0fr] opacity-0"
+            : "[grid-template-rows:1fr] opacity-100",
         ].join(" ")}
       >
         <div className={hidden ? "min-h-0 overflow-hidden" : "min-h-0"}>

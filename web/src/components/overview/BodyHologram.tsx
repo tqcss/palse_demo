@@ -53,7 +53,10 @@ export default function BodyHologram() {
   useEffect(() => {
     if (selectedId == null) return;
     function onPointerDown(event: PointerEvent) {
-      if (rootRef.current != null && !rootRef.current.contains(event.target as Node)) {
+      if (
+        rootRef.current != null &&
+        !rootRef.current.contains(event.target as Node)
+      ) {
         setSelectedId(null);
       }
     }
@@ -108,7 +111,7 @@ export default function BodyHologram() {
           height={IMAGE_HEIGHT}
           decoding="async"
           draggable={false}
-          className="relative block h-full w-full select-none"
+          className="relative block h-full w-full select-none opacity-60 saturate-80"
         />
 
         {/* Leader lines: same viewBox aspect as the box, lines scale with it. */}
@@ -132,41 +135,43 @@ export default function BodyHologram() {
               strokeLinejoin="round"
               strokeLinecap="round"
               className="transition-opacity duration-200"
-              style={{ opacity: activeId == null || activeId === system.id ? 1 : 0.6 }}
+              style={{
+                opacity: activeId == null || activeId === system.id ? 1 : 0.6,
+              }}
             />
           ))}
 
           {debug
             ? BODY_SYSTEMS.map((system) => (
-                <g key={`debug-${system.id}`} className="text-risk-high-fg">
-                  <line
-                    x1={0}
-                    y1={vy(system.hotspot.y)}
-                    x2={IMAGE_WIDTH}
-                    y2={vy(system.hotspot.y)}
-                    stroke="currentColor"
-                    strokeDasharray="6 6"
-                    strokeWidth={1}
-                  />
-                  <line
-                    x1={vx(system.hotspot.x)}
-                    y1={0}
-                    x2={vx(system.hotspot.x)}
-                    y2={IMAGE_HEIGHT}
-                    stroke="currentColor"
-                    strokeDasharray="6 6"
-                    strokeWidth={1}
-                  />
-                  <text
-                    x={vx(system.hotspot.x) + 8}
-                    y={vy(system.hotspot.y) + 26}
-                    fontSize={28}
-                    fill="currentColor"
-                  >
-                    {system.id}: {system.hotspot.x},{system.hotspot.y}
-                  </text>
-                </g>
-              ))
+              <g key={`debug-${system.id}`} className="text-risk-high-fg">
+                <line
+                  x1={0}
+                  y1={vy(system.hotspot.y)}
+                  x2={IMAGE_WIDTH}
+                  y2={vy(system.hotspot.y)}
+                  stroke="currentColor"
+                  strokeDasharray="6 6"
+                  strokeWidth={1}
+                />
+                <line
+                  x1={vx(system.hotspot.x)}
+                  y1={0}
+                  x2={vx(system.hotspot.x)}
+                  y2={IMAGE_HEIGHT}
+                  stroke="currentColor"
+                  strokeDasharray="6 6"
+                  strokeWidth={1}
+                />
+                <text
+                  x={vx(system.hotspot.x) + 8}
+                  y={vy(system.hotspot.y) + 26}
+                  fontSize={28}
+                  fill="currentColor"
+                >
+                  {system.id}: {system.hotspot.x},{system.hotspot.y}
+                </text>
+              </g>
+            ))
             : null}
         </svg>
 
@@ -183,7 +188,7 @@ export default function BodyHologram() {
                   top: `${system.label.y}%`,
                   opacity: activeId == null || activeId === system.id ? 1 : 0.6,
                   transform:
-                    system.label.side === "left"
+                    system.label.side === "right"
                       ? "translateY(-50%)"
                       : "translate(-100%, -50%)",
                 }}
@@ -194,7 +199,9 @@ export default function BodyHologram() {
                   aria-expanded={selectedId === system.id}
                   aria-controls={popoverId}
                   tabIndex={
-                    focusIndex === ROVING_IDS.indexOf(`label-${system.id}`) ? 0 : -1
+                    focusIndex === ROVING_IDS.indexOf(`label-${system.id}`)
+                      ? 0
+                      : -1
                   }
                   aria-label={`${system.name} system`}
                   onClick={() => toggleSystem(system.id)}
@@ -277,7 +284,10 @@ export default function BodyHologram() {
           aria-labelledby={`${rootId}-${selected.id}-title`}
           className="mt-4 rounded-card border border-theme-line bg-white p-4 shadow-card md:hidden"
         >
-          <SystemDetails system={selected} titleId={`${rootId}-${selected.id}-title`} />
+          <SystemDetails
+            system={selected}
+            titleId={`${rootId}-${selected.id}-title`}
+          />
           <button
             type="button"
             onClick={() => setSelectedId(null)}
@@ -289,14 +299,19 @@ export default function BodyHologram() {
       ) : null}
 
       {/* Mobile: 2x2 grid of the same label buttons. */}
-      <div className="mt-4 grid grid-cols-2 gap-2 md:hidden" aria-label="Body systems">
+      <div
+        className="mt-4 grid grid-cols-2 gap-2 md:hidden"
+        aria-label="Body systems"
+      >
         {BODY_SYSTEMS.map((system, index) => (
           <button
             key={`grid-${system.id}`}
             type="button"
             aria-expanded={selectedId === system.id}
             aria-controls={`${rootId}-${system.id}`}
-            tabIndex={focusIndex === ROVING_IDS.indexOf(`label-${system.id}`) ? 0 : -1}
+            tabIndex={
+              focusIndex === ROVING_IDS.indexOf(`label-${system.id}`) ? 0 : -1
+            }
             onClick={() => toggleSystem(system.id)}
             className={[
               "flex min-h-10 items-center gap-2 rounded-control border px-2.5 py-1.5 text-left text-xs font-semibold transition-colors",
@@ -313,7 +328,11 @@ export default function BodyHologram() {
               {index + 1}
             </span>
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-theme-cream">
-              <MsIcon name={system.iconName} className="text-[14px] text-theme-maroon" optical={16} />
+              <MsIcon
+                name={system.iconName}
+                className="text-[14px] text-theme-maroon"
+                optical={16}
+              />
             </span>
             {system.name}
           </button>
@@ -339,7 +358,7 @@ function SystemPopover({
       role="dialog"
       aria-labelledby={`${popoverId}-title`}
       className={[
-        "absolute top-[calc(100%+8px)] z-[var(--z-dropdown)] w-64 rounded-card border border-theme-line bg-white p-4 text-left shadow-popover",
+        "z-100 absolute top-[calc(100%+8px)] z-[var(--z-dropdown)] w-64 rounded-card border border-theme-line bg-white p-4 text-left shadow-popover",
         system.label.side === "left" ? "left-0" : "right-0",
       ].join(" ")}
     >
@@ -357,13 +376,24 @@ function SystemPopover({
 }
 
 /** Shared detail body: signs, why it matters, citation. */
-function SystemDetails({ system, titleId }: { system: BodySystem; titleId: string }) {
-  const citation = system.citationKey != null ? CITATIONS[system.citationKey] : null;
+function SystemDetails({
+  system,
+  titleId,
+}: {
+  system: BodySystem;
+  titleId: string;
+}) {
+  const citation =
+    system.citationKey != null ? CITATIONS[system.citationKey] : null;
   return (
     <div>
       <div className="flex items-center gap-2.5">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-theme-cream">
-          <MsIcon name={system.iconName} className="text-[18px] text-theme-maroon" optical={20} />
+          <MsIcon
+            name={system.iconName}
+            className="text-[18px] text-theme-maroon"
+            optical={20}
+          />
         </span>
         <h3 id={titleId} className="text-sm font-bold text-theme-ink">
           {system.name}
@@ -372,14 +402,21 @@ function SystemDetails({ system, titleId }: { system: BodySystem; titleId: strin
       <ul className="mt-3 flex flex-col gap-1 text-sm text-theme-ink-soft">
         {system.signs.map((sign) => (
           <li key={sign} className="flex items-center gap-2">
-            <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-theme-maroon" />
+            <span
+              aria-hidden
+              className="h-1.5 w-1.5 shrink-0 rounded-full bg-theme-maroon"
+            />
             {sign}
           </li>
         ))}
       </ul>
       {/* TODO(clinical-review): wording comes from the content file. */}
-      <p className="mt-3 text-xs leading-relaxed text-theme-ink-soft">{system.whyItMatters}</p>
-      {citation ? <p className="mt-2 text-[11px] text-theme-gray">Source: {citation}</p> : null}
+      <p className="mt-3 text-xs leading-relaxed text-theme-ink-soft">
+        {system.whyItMatters}
+      </p>
+      {citation ? (
+        <p className="mt-2 text-[11px] text-theme-gray">Source: {citation}</p>
+      ) : null}
     </div>
   );
 }
@@ -390,7 +427,14 @@ function handleRovingKeys(
 ): (event: React.KeyboardEvent<HTMLDivElement>) => void {
   return function onKeyDown(event) {
     if (
-      !["ArrowDown", "ArrowUp", "ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)
+      ![
+        "ArrowDown",
+        "ArrowUp",
+        "ArrowRight",
+        "ArrowLeft",
+        "Home",
+        "End",
+      ].includes(event.key)
     ) {
       return;
     }
@@ -401,9 +445,13 @@ function handleRovingKeys(
     } else if (event.key === "End") {
       nextId = ROVING_IDS[ROVING_IDS.length - 1];
     } else {
-      const delta = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : -1;
-      const index = ROVING_IDS.indexOf(document.activeElement?.id ?? ROVING_IDS[0]);
-      nextId = ROVING_IDS[(index + delta + ROVING_IDS.length) % ROVING_IDS.length];
+      const delta =
+        event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : -1;
+      const index = ROVING_IDS.indexOf(
+        document.activeElement?.id ?? ROVING_IDS[0],
+      );
+      nextId =
+        ROVING_IDS[(index + delta + ROVING_IDS.length) % ROVING_IDS.length];
     }
     setFocusIndex(ROVING_IDS.indexOf(nextId));
     document.getElementById(nextId)?.focus();
