@@ -1,0 +1,153 @@
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "tailwindcss";
+
+@theme {
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica,
+    Arial, sans-serif;
+
+  --color-theme-maroon: #5b1616;
+  --color-theme-maroon-hover: #6f1d1d;
+  /* ~8% maroon tint for hover/active fills over white surfaces. */
+  --color-theme-maroon-soft: rgb(91 22 22 / 8%);
+  --color-theme-white: #fbf8f5;
+  --color-theme-light-gray: #f3f2ee;
+  --color-theme-gray: #9a8f8c;
+  --color-theme-line: #e8e3dd;
+  --color-theme-ink: #0f1720;
+  --color-theme-ink-soft: #2b2b2b;
+
+  /* Shared component accents (CheckInbox, form placeholders) */
+  --color-theme-cream: #f8eded;
+  --color-theme-placeholder: #a0a0a0;
+
+  /* Risk tiers (static/css/patients.css) */
+  --color-risk-high-bg: #fde7e7;
+  --color-risk-high-fg: #b42318;
+  --color-risk-moderate-bg: #fff3cf;
+  --color-risk-moderate-fg: #9a5b00;
+  --color-risk-low-bg: #e8f5ee;
+  --color-risk-low-fg: #1f7a45;
+
+  /* Cards & controls: soft warm shadow + consistent radii. Tailwind v4
+     generates rounded-card/rounded-control/shadow-card from these. */
+  --radius-card: 16px;
+  --radius-control: 10px;
+  --shadow-card:
+    0 1px 2px rgb(91 22 22 / 6%),
+    0 10px 28px -16px rgb(15 23 32 / 14%);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--color-theme-light-gray);
+    color: var(--color-theme-ink-soft);
+  }
+
+  /* The selection tint referenced --color-theme-crimson, which never existed;
+     the theme maroon is the intended accent. */
+  ::selection {
+    background-color: color-mix(
+      in srgb,
+      var(--color-theme-maroon) 18%,
+      transparent
+    );
+  }
+
+  /* One visible focus ring everywhere (maroon, 2px, 2px offset). */
+  :focus-visible {
+    outline: 2px solid var(--color-theme-maroon);
+    outline-offset: 2px;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(15, 23, 32, 0.18) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(15, 23, 32, 0.16);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(15, 23, 32, 0.28);
+  }
+}
+
+/* Respect the OS reduced-motion preference: transitions and animations
+   (spinners keep their essential state, they just no longer animate). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Navigation progress indicator (AdminLayout): thin maroon swipe under the
+   top bar during route transitions. Reduced-motion turns it into a flash that
+   stops near-full, which still signals "navigating" without movement. */
+@keyframes admin-nav-progress {
+  from {
+    transform: scaleX(0.05);
+    opacity: 1;
+  }
+  60% {
+    transform: scaleX(0.7);
+    opacity: 1;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+
+.admin-nav-progress {
+  animation: admin-nav-progress 450ms ease-in-out forwards;
+}
+
+/* Google Material Symbols (ligature icon font loaded via index.html CDN
+   link). Size these with font-size/text-* utilities like any glyph:
+   <span className="ms text-xl">group</span> or via the MsIcon component. */
+.ms {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  display: inline-block;
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+  font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  overflow: hidden;
+}

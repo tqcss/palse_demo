@@ -2,7 +2,7 @@ version: 2
 updates:
   # Frontend npm dependencies (managed with bun; Dependabot reads package.json).
   - package-ecosystem: npm
-    directory: /frontend
+    directory: /web
     schedule:
       interval: weekly
     labels:
