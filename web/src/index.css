@@ -31,6 +31,22 @@
   --color-risk-moderate-fg: #9a5b00;
   --color-risk-low-bg: #e8f5ee;
   --color-risk-low-fg: #1f7a45;
+  /* Pending tier: muted violet in the same soft-tint / dark-text family.
+     Used for "not yet assessed" everywhere (RiskBadge, donuts, charts). */
+  --color-risk-pending-bg: #f1eefb;
+  --color-risk-pending-fg: #5d4391;
+
+  /* Semantic aliases mapping onto the tier family so components can say
+     what they MEAN: success/danger reuse the low/high tiers, warning is the
+     moderate tier, info is its own calm blue in the same tint family. */
+  --color-success-bg: var(--color-risk-low-bg);
+  --color-success-fg: var(--color-risk-low-fg);
+  --color-warning-bg: var(--color-risk-moderate-bg);
+  --color-warning-fg: var(--color-risk-moderate-fg);
+  --color-danger-bg: var(--color-risk-high-bg);
+  --color-danger-fg: var(--color-risk-high-fg);
+  --color-info-bg: #eaf2f7;
+  --color-info-fg: #2c6486;
 
   /* Cards & controls: soft warm shadow + consistent radii. Tailwind v4
      generates rounded-card/rounded-control/shadow-card from these. */
@@ -39,9 +55,22 @@
   --shadow-card:
     0 1px 2px rgb(91 22 22 / 6%),
     0 10px 28px -16px rgb(15 23 32 / 14%);
+  /* Overlays: popover/dialog surfaces (Modal uses shadow-card today). */
+  --shadow-popover:
+    0 2px 6px rgb(91 22 22 / 8%),
+    0 16px 40px -20px rgb(15 23 32 / 28%);
 }
 
 @layer base {
+  :root {
+    /* Z-index layers: one scale for the whole app. Use with z-[var(--z-*)]
+       until a component wraps them; values count up by surface altitude. */
+    --z-nav: 30;       /* sidebars, top bars */
+    --z-dropdown: 40;  /* user menus, popovers above chrome */
+    --z-modal: 50;     /* modals + their backdrops */
+    --z-toast: 60;     /* topmost, always visible */
+  }
+
   html {
     -webkit-text-size-adjust: 100%;
   }
@@ -125,6 +154,23 @@
 
 .admin-nav-progress {
   animation: admin-nav-progress 450ms ease-in-out forwards;
+}
+
+/* Dashboard risk-overview: gentle pulse on the hologram hotspots. The global
+   prefers-reduced-motion rule zeroes animation durations, so this stays
+   still for users who opt out of motion. */
+@keyframes risk-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(91 22 22 / 35%);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgb(91 22 22 / 0%);
+  }
+}
+
+.risk-pulse {
+  animation: risk-pulse 2.4s ease-in-out infinite;
 }
 
 /* Google Material Symbols (ligature icon font loaded via index.html CDN

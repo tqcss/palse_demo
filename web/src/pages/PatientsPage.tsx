@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import Modal from "../components/Modal.tsx";
 import Notice from "../components/Notice.tsx";
@@ -33,9 +33,28 @@ function matches(filter: Filter, patient: Patient): boolean {
 export default function PatientsPage() {
   usePageTitle("Patients");
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  // URL-driven filter: /patients?risk=high|moderate|low|pending (used by the
+  // dashboard's donuts and insights; "all"/absent = unfiltered).
+  const riskParam = searchParams.get("risk");
+  const filter: Filter = (FILTER_ORDER as readonly string[]).includes(riskParam ?? "")
+    ? (riskParam as Filter)
+    : "all";
+
+  function updateFilter(next: Filter) {
+    setSearchParams(
+      (current) => {
+        const params = new URLSearchParams(current);
+        if (next === "all") params.delete("risk");
+        else params.set("risk", next);
+        return params;
+      },
+      { replace: true },
+    );
+  }
+
   const [patients, setPatients] = useState<Patient[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<Filter>("all");
   const [addOpen, setAddOpen] = useState(false);
   const [deleting, setDeleting] = useState<Patient | null>(null);
   const [deletePending, setDeletePending] = useState(false);
@@ -140,7 +159,7 @@ export default function PatientsPage() {
               key={tier}
               type="button"
               aria-pressed={active}
-              onClick={() => setFilter(tier)}
+              onClick={() => updateFilter(tier)}
               className={[
                 "rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors duration-150",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-maroon",
