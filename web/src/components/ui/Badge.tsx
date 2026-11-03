@@ -7,7 +7,7 @@ const TONES: Record<BadgeTone, string> = {
   success: "border-risk-low-fg/25 bg-risk-low-bg text-risk-low-fg",
   warning: "border-risk-moderate-fg/30 bg-risk-moderate-bg text-risk-moderate-fg",
   danger: "border-risk-high-fg/25 bg-risk-high-bg text-risk-high-fg",
-  info: "border-sky-300/40 bg-sky-50 text-sky-900",
+  info: "border-info-fg/30 bg-info-bg text-info-fg",
 };
 
 export default function Badge({

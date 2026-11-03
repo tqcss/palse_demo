@@ -2,11 +2,14 @@ interface PrimaryButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /** Show a spinner and ignore the action while true. */
   pending?: boolean;
+  /** Full width by default; inline keeps the button's natural width. */
+  inline?: boolean;
 }
 
 export default function PrimaryButton({
   pending = false,
   disabled,
+  inline = false,
   className,
   children,
   ...props
@@ -19,7 +22,8 @@ export default function PrimaryButton({
       disabled={isDisabled}
       aria-busy={pending}
       className={[
-        "flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5",
+        "flex items-center justify-center gap-2 rounded-control px-4 py-2.5",
+        inline ? "" : "w-full",
         "text-sm font-semibold text-theme-white",
         "bg-theme-maroon hover:bg-theme-maroon-hover",
         "transition-colors duration-150",

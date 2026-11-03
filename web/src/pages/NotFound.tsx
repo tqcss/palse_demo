@@ -24,13 +24,13 @@ export default function NotFound() {
 
   return (
     <main className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-theme-light-gray px-6 text-center text-theme-ink-gray">
-      {/* Soft brand glow on the light backdrop */}
+      {/* Soft brand glow on the light backdrop (token-based tints). */}
       <div
         aria-hidden
         className="pointer-events-none absolute -top-32 -right-28 h-160 w-160"
         style={{
           background:
-            "radial-gradient(circle, rgba(91, 22, 22, 0.06) 0%, rgba(0, 0, 0, 0) 50%)",
+            "radial-gradient(circle, var(--color-theme-maroon-soft) 0%, transparent 50%)",
         }}
       />
       <div
@@ -38,7 +38,7 @@ export default function NotFound() {
         className="pointer-events-none absolute -bottom-40 -left-24 h-140 w-140"
         style={{
           background:
-            "radial-gradient(circle, rgba(102, 24, 31, 0.05) 0%, rgba(0, 0, 0, 0) 50%)",
+            "radial-gradient(circle, var(--color-theme-maroon-soft) 0%, transparent 50%)",
         }}
       />
       {/* Gentle white wash down the middle so text stays crisp */}
@@ -47,7 +47,7 @@ export default function NotFound() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "linear-gradient(to bottom, rgba(251, 248, 245, 0.9), rgba(251, 248, 245, 0.55) 45%, rgba(251, 248, 245, 0))",
+            "linear-gradient(to bottom, var(--color-theme-white), transparent 90%)",
         }}
       />
 
@@ -56,7 +56,7 @@ export default function NotFound() {
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 select-none"
       >
-        <span className="text-[26vw] leading-none font-black tracking-tighter text-theme-maroon/5 md:text-72">
+        <span className="text-[26vw] leading-none font-black tracking-tighter text-theme-maroon/5 md:text-[12rem]">
           404
         </span>
       </div>

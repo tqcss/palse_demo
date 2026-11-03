@@ -41,7 +41,9 @@ export function relativeTime(iso: string): string {
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ${suffix}`;
   const days = Math.floor(hours / 24);
-  if (days < 45) return `${days} day${days === 1 ? "" : "s"} ${suffix}`;
+  if (days < 14) return `${days} day${days === 1 ? "" : "s"} ${suffix}`;
+  const weeks = Math.round(days / 7);
+  if (days < 45) return `${weeks} week${weeks === 1 ? "" : "s"} ${suffix}`;
   const months = Math.floor(days / 30);
   if (months < 14) return `${months} month${months === 1 ? "" : "s"} ${suffix}`;
   const years = Math.floor(days / 365);

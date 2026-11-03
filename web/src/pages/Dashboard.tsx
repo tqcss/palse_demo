@@ -47,6 +47,8 @@ import { vitalsError, labsError, rangeFieldError } from "../lib/clinicalValidati
 import { downloadScoredReport } from "../lib/pdfReport.ts";
 import type { ScoredReportContext } from "../lib/pdfReport.ts";
 import ScoringFailureNotice from "../components/ScoringFailureNotice.tsx";
+import RiskOverviewSection from "../components/overview/RiskOverviewSection.tsx";
+import { TIER_COLOR_VARS } from "../lib/tiers.ts";
 import { formatDateLabel, formatDateTimeLabel, formatPatientName } from "../lib/patient.ts";
 import type { Patient } from "../lib/patient.ts";
 import { usePageTitle } from "../hooks/usePageTitle.ts";
@@ -162,7 +164,6 @@ const EMPTY_SECTIONS: AssessmentSections = {
  */
 export default function Dashboard() {
   usePageTitle("Dashboard");
-
   const { session } = useAuth();
   const accessToken = session?.access_token ?? null;
 
@@ -533,7 +534,11 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col gap-8">
-      <header className="flex flex-col gap-1.5">
+      {/* Above the intake workflow: risk factors + live population overview.
+          Loads its data independently; never gates the wizard below. */}
+      <RiskOverviewSection />
+
+      <header id="intake-workflow" className="flex flex-col gap-1.5 scroll-mt-20">
         <p className="text-xs font-bold uppercase tracking-wide text-theme-maroon">
           Clinical intake workflow
         </p>
@@ -1455,9 +1460,10 @@ function ResultsPanel({
 /* ------------------------- Scored results view -------------------------- */
 
 const DONUT_COLORS: Record<string, string> = {
-  HIGH: "#b42318",
-  MODERATE: "#9a5b00",
-  LOW: "#1f7a45",
+  // Token references so the chart stays in sync with the tier scale.
+  HIGH: TIER_COLOR_VARS.high,
+  MODERATE: TIER_COLOR_VARS.moderate,
+  LOW: TIER_COLOR_VARS.low,
 };
 
 function ScoredResultsPanel({
@@ -1502,7 +1508,7 @@ function ScoredResultsPanel({
         <div
           className="relative h-28 w-28 shrink-0 rounded-full"
           style={{
-            background: `conic-gradient(${color} ${percent}%, var(--color-theme-line, #e5e7eb) ${percent}%)`,
+            background: `conic-gradient(${color} ${percent}%, var(--color-theme-line) ${percent}%)`,
           }}
           role="img"
           aria-label={`Sepsis risk probability ${result.probabilityPercent}%`}

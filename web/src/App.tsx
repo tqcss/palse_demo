@@ -26,6 +26,16 @@ import ProfileSecurityPage from "./pages/ProfileSecurityPage.tsx";
 import ReportsPage from "./pages/ReportsPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import Signin from "./pages/Signin.tsx";
+
+/* Dev-only component gallery (UI QA). Static import.meta.env.DEV check makes
+   the chunk unreachable in production builds — never bundled, never routed. */
+const Styleguide = import.meta.env.DEV
+  ? lazy(() => import("./pages/Styleguide.tsx"))
+  : null;
+
+function DevStyleguide() {
+  return Styleguide != null ? <Styleguide /> : <NotFound />;
+}
 import AdminSignin from "./pages/admin/AdminSignin.tsx";
 import AdminRequestAccess from "./pages/admin/AdminRequestAccess.tsx";
 import AdminOnboarding from "./pages/admin/AdminOnboarding.tsx";
@@ -46,6 +56,14 @@ function AdminSection({ children }: { children: React.ReactNode }) {
       <ErrorBoundary>{children}</ErrorBoundary>
     </Suspense>
   );
+}
+
+/**
+ * Clinical page wrapper: a rendering crash must not blank the whole pane like
+ * a broken admin page must not. Same retryable boundary the console uses.
+ */
+function ClinicalSection({ children }: { children: React.ReactNode }) {
+  return <ErrorBoundary>{children}</ErrorBoundary>;
 }
 
 function App() {
@@ -141,16 +159,26 @@ function App() {
             </RequireAuth>
           }
         >
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/patients" element={<PatientsPage />} />
-          <Route path="/patients/:id/edit" element={<EditPatientPage />} />
-          <Route path="/monitor" element={<MonitorPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/profile/security" element={<ProfileSecurityPage />} />
+          <Route path="/dashboard" element={<ClinicalSection><Dashboard /></ClinicalSection>} />
+          <Route path="/patients" element={<ClinicalSection><PatientsPage /></ClinicalSection>} />
+          <Route
+            path="/patients/:id/edit"
+            element={<ClinicalSection><EditPatientPage /></ClinicalSection>}
+          />
+          <Route path="/monitor" element={<ClinicalSection><MonitorPage /></ClinicalSection>} />
+          <Route path="/reports" element={<ClinicalSection><ReportsPage /></ClinicalSection>} />
+          <Route path="/profile" element={<ClinicalSection><ProfilePage /></ClinicalSection>} />
+          <Route
+            path="/profile/security"
+            element={<ClinicalSection><ProfileSecurityPage /></ClinicalSection>}
+          />
         </Route>
 
         <Route path="/" element={<HomeRedirect />} />
+        {/* Dev-only styleguide: component gallery for visual QA. */}
+        {import.meta.env.DEV ? (
+          <Route path="/dev/styleguide" element={<DevStyleguide />} />
+        ) : null}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

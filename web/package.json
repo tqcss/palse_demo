@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "test": "vitest run",
+    "check:tokens": "node scripts/check-tokens.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -30,6 +32,7 @@
     "babel-plugin-react-compiler": "^1.0.0",
     "oxlint": "^1.88.0",
     "typescript": "~6.0.3",
-    "vite": "^8.3.4"
+    "vite": "^8.3.4",
+    "vitest": "^5.1.0"
   }
 }
