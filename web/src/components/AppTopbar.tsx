@@ -5,9 +5,12 @@ import { useAuth } from "../context/useAuth.ts";
 
 /** Strip for small screens (< md): horizontal nav icons. */
 export function AppMobileNav() {
+  // Page names match the sidebar (Dashboard, Patients, Monitoring, Reports) —
+  // one vocabulary per destination across the whole shell.
   const links = [
     { to: "/dashboard", label: "Dashboard" },
     { to: "/patients", label: "Patients" },
+    { to: "/monitor", label: "Monitoring" },
     { to: "/reports", label: "Reports" },
   ];
 
@@ -43,9 +46,10 @@ const TOPBAR_LABELS: Array<{
   match: (path: string) => boolean;
   label: string;
 }> = [
-    { match: (p) => p.startsWith("/dashboard"), label: "Assessment" },
-    { match: (p) => p.startsWith("/patients"), label: "Patient Registry" },
-    { match: (p) => p.startsWith("/reports"), label: "Reports & Analytics" },
+    { match: (p) => p.startsWith("/dashboard"), label: "Dashboard" },
+    { match: (p) => p.startsWith("/patients"), label: "Patients" },
+    { match: (p) => p.startsWith("/monitor"), label: "Monitoring" },
+    { match: (p) => p.startsWith("/reports"), label: "Reports" },
   ];
 
 function titleForPath(path: string): string {

@@ -14,6 +14,7 @@ export default function AppSidebar() {
   const navItems = [
     { to: "/dashboard", label: "Dashboard", icon: "space_dashboard" },
     { to: "/patients", label: "Patients", icon: "group" },
+    { to: "/monitor", label: "Monitoring", icon: "monitor_heart" },
     { to: "/reports", label: "Reports", icon: "monitoring" },
     ...(profile?.role === "admin"
       ? [{ to: "/admin", label: "Admin console", icon: "manage_accounts" }]
@@ -68,7 +69,7 @@ export default function AppSidebar() {
             className="flex w-full items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium text-theme-white/60 transition-colors duration-150 hover:bg-theme-white/5 hover:text-theme-white/90 focus-visible:outline-2 focus-visible:outline-theme-white/60 disabled:opacity-60"
           >
             <MsIcon name="logout" className="shrink-0 text-[20px]" optical={20} />
-            {signingOut ? "Signing out…" : "Logout"}
+            {signingOut ? "Signing out…" : "Log out"}
           </button>
         </div>
       </aside>

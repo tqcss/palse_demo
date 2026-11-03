@@ -161,7 +161,7 @@ const EMPTY_SECTIONS: AssessmentSections = {
  * engine scores retroactively once deployed).
  */
 export default function Dashboard() {
-  usePageTitle("Assessment");
+  usePageTitle("Dashboard");
 
   const { session } = useAuth();
   const accessToken = session?.access_token ?? null;

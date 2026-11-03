@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import AuthFormShell from "../../components/AuthFormShell.tsx";
+import AuthBackLink from "../../components/AuthBackLink.tsx";
 import FormInput from "../../components/FormInput.tsx";
 import Notice from "../../components/Notice.tsx";
 import PasswordEye from "../../components/PasswordEye.tsx";
@@ -109,6 +110,9 @@ export default function AdminSignin() {
 
   return (
     <AuthFormShell>
+      {/* Wrong turn? Land here from /signin by accident — one visible way back. */}
+      <AuthBackLink to="/signin" label="Clinician sign-in" />
+
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Administrator sign in</h1>
         <p className="mt-2 text-sm text-theme-gray">
@@ -167,6 +171,7 @@ export default function AdminSignin() {
           </Link>
           <Link
             to="/forgot-password"
+            state={{ from: "admin" }}
             className="text-sm font-medium text-theme-maroon underline-offset-4 hover:underline"
           >
             Forgot password?

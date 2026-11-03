@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import AuthFormShell from "../components/AuthFormShell.tsx";
+import AuthBackLink from "../components/AuthBackLink.tsx";
 import { AuthSplash } from "../components/AuthGuard.tsx";
 import CheckInbox from "../components/CheckInbox.tsx";
 import FormInput from "../components/FormInput.tsx";
@@ -168,6 +169,9 @@ export default function ResetPassword() {
 
         <PrimaryButton pending={pending}>Update password</PrimaryButton>
       </form>
+
+      {/* Abandon the flow and return to the sign-in page. */}
+      <AuthBackLink className="mt-8" to="/signin" label="Back to sign in" />
     </AuthFormShell>
   );
 }

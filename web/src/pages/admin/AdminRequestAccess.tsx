@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import AuthFormShell from "../../components/AuthFormShell.tsx";
+import AuthBackLink from "../../components/AuthBackLink.tsx";
 import CheckInbox from "../../components/CheckInbox.tsx";
 import FormInput from "../../components/FormInput.tsx";
 import Notice from "../../components/Notice.tsx";
@@ -142,6 +143,9 @@ export default function AdminRequestAccess() {
 
   return (
     <AuthFormShell>
+      {/* Chrome-less flow: explicit exit back to the administrator sign-in. */}
+      <AuthBackLink to="/admin/signin" label="Administrator sign-in" />
+
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Request administrator access</h1>
         <p className="mt-2 text-sm text-theme-gray">

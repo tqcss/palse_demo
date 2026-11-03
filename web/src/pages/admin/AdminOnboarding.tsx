@@ -15,7 +15,20 @@ import { joinOrganization, createOrganization } from "../../lib/admin.ts";
  */
 export default function AdminOnboarding() {
   const navigate = useNavigate();
-  const { profile, refetchProfile } = useAuth();
+  const { profile, refetchProfile, signOut } = useAuth();
+
+  // Wrong account landed on this mandatory step: sign out and start over.
+  const [signingOut, setSigningOut] = useState(false);
+  async function handleSignOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await signOut();
+      navigate("/admin/signin?signedOut=1", { replace: true });
+    } finally {
+      setSigningOut(false);
+    }
+  }
 
   const [orgName, setOrgName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
@@ -159,6 +172,20 @@ export default function AdminOnboarding() {
           </div>
         </form>
       </section>
+
+      {/* No chrome on this step: give a wrong-account user a way out. */}
+      <p className="text-sm text-theme-gray">
+        Not the right account?{" "}
+        <button
+          type="button"
+          onClick={() => void handleSignOut()}
+          disabled={signingOut}
+          className="font-semibold text-theme-maroon underline-offset-4 hover:underline disabled:opacity-60"
+        >
+          {signingOut ? "Signing out…" : "Sign out"}
+        </button>{" "}
+        to return to the administrator sign-in.
+      </p>
     </div>
   );
 }

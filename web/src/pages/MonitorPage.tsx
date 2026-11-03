@@ -93,7 +93,7 @@ const METRICS: ReadonlyArray<MetricConfig> = [
 ];
 
 export default function MonitorPage() {
-  usePageTitle("Vitals monitor");
+  usePageTitle("Monitoring");
 
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();

@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import AuthFormShell from "../components/AuthFormShell.tsx";
+import AuthBackLink from "../components/AuthBackLink.tsx";
 import { AuthSplash } from "../components/AuthGuard.tsx";
 import CheckInbox from "../components/CheckInbox.tsx";
 import FormInput from "../components/FormInput.tsx";
@@ -16,6 +17,14 @@ import { supabase } from "../lib/supabase.ts";
 
 export default function ForgotPassword() {
   const { loading } = useAuth();
+  const location = useLocation();
+
+  // Shared by both portals: the admin sign-in passes state.from = "admin", so
+  // the exit links return to the sign-in page the user actually came from.
+  const adminFlow = (location.state as { from?: string } | null)?.from === "admin";
+  const back = adminFlow
+    ? { to: "/admin/signin", label: "Back to admin sign-in" }
+    : { to: "/signin", label: "Back to sign in" };
 
   const [email, setEmail] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -128,10 +137,10 @@ export default function ForgotPassword() {
               Resend email
             </PrimaryButton>
             <Link
-              to="/signin"
+              to={back.to}
               className="text-sm font-semibold text-theme-maroon underline-offset-4 hover:underline"
             >
-              Back to sign in
+              {back.label}
             </Link>
           </div>
         </CheckInbox>
@@ -176,14 +185,7 @@ export default function ForgotPassword() {
         </PrimaryButton>
       </form>
 
-      <p className="mt-10 text-sm text-theme-gray">
-        <Link
-          to="/signin"
-          className="font-semibold text-theme-maroon underline-offset-4 hover:underline"
-        >
-          ← Back to sign in
-        </Link>
-      </p>
+      <AuthBackLink className="mt-10" to={back.to} label={back.label} />
     </AuthFormShell>
   );
 }

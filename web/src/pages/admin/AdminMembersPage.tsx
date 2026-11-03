@@ -43,10 +43,14 @@ const PAGE_SIZE = 10;
 type MemberSort = "name_asc" | "name_desc" | "created_asc" | "created_desc";
 
 /** Status filter keys (URL) mapped against member + pending-request state. */
-type StatusKey = "all" | "active" | "suspended" | "first_login" | "reset_requested";
+type StatusKey =
+  "all" | "active" | "suspended" | "first_login" | "reset_requested";
 
 function memberName(member: OrgMember): string {
-  return [member.first_name, member.last_name].filter((v) => v?.trim()).join(" ") || "Unknown";
+  return (
+    [member.first_name, member.last_name].filter((v) => v?.trim()).join(" ") ||
+    "Unknown"
+  );
 }
 
 interface IssuedPassword {
@@ -79,13 +83,20 @@ export default function AdminMembersPage() {
 
   /* ------------------------------ URL state -------------------------------- */
   const q = searchParams.get("q") ?? "";
-  const role = searchParams.get("role") === "admin" ? "admin" : searchParams.get("role") === "clinician" ? "clinician" : "all";
-  const statusKey = (["all", "active", "suspended", "first_login", "reset_requested"] as const)
-    .includes(searchParams.get("status") as StatusKey)
+  const role =
+    searchParams.get("role") === "admin"
+      ? "admin"
+      : searchParams.get("role") === "clinician"
+        ? "clinician"
+        : "all";
+  const statusKey = (
+    ["all", "active", "suspended", "first_login", "reset_requested"] as const
+  ).includes(searchParams.get("status") as StatusKey)
     ? (searchParams.get("status") as StatusKey)
     : "all";
-  const sort = (["name_asc", "name_desc", "created_asc", "created_desc"] as const)
-    .includes(searchParams.get("sort") as MemberSort)
+  const sort = (
+    ["name_asc", "name_desc", "created_asc", "created_desc"] as const
+  ).includes(searchParams.get("sort") as MemberSort)
     ? (searchParams.get("sort") as MemberSort)
     : "created_desc";
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
@@ -100,7 +111,8 @@ export default function AdminMembersPage() {
         (current) => {
           const next = new URLSearchParams(current);
           for (const [key, value] of Object.entries(patch)) {
-            if (value == null || value === "" || value === "all") next.delete(key);
+            if (value == null || value === "" || value === "all")
+              next.delete(key);
             else next.set(key, value);
           }
           // Filter/sort changes (replace mode without an explicit page) reset
@@ -157,33 +169,45 @@ export default function AdminMembersPage() {
 
     if (q.trim() !== "") {
       const needle = q.trim().toLowerCase();
-      list = list.filter((member) =>
-        memberName(member).toLowerCase().includes(needle) ||
-        (member.email ?? "").toLowerCase().includes(needle),
+      list = list.filter(
+        (member) =>
+          memberName(member).toLowerCase().includes(needle) ||
+          (member.email ?? "").toLowerCase().includes(needle),
       );
     }
     if (role !== "all") {
       list = list.filter((member) => member.role === role);
     }
     switch (statusKey) {
-      case "active": list = list.filter((member) => member.status === "active"); break;
-      case "suspended": list = list.filter((member) => member.status === "disabled"); break;
+      case "active":
+        list = list.filter((member) => member.status === "active");
+        break;
+      case "suspended":
+        list = list.filter((member) => member.status === "disabled");
+        break;
       case "first_login":
-        list = list.filter((member) => member.status === "active" && member.must_set_password);
+        list = list.filter(
+          (member) => member.status === "active" && member.must_set_password,
+        );
         break;
       case "reset_requested":
         list = list.filter((member) => requestedIds.has(member.id));
         break;
-      default: break;
+      default:
+        break;
     }
 
     const sorted = [...list];
     sorted.sort((a, b) => {
       switch (sort) {
-        case "name_asc": return memberName(a).localeCompare(memberName(b));
-        case "name_desc": return memberName(b).localeCompare(memberName(a));
-        case "created_asc": return a.created_at.localeCompare(b.created_at);
-        default: return b.created_at.localeCompare(a.created_at);
+        case "name_asc":
+          return memberName(a).localeCompare(memberName(b));
+        case "name_desc":
+          return memberName(b).localeCompare(memberName(a));
+        case "created_asc":
+          return a.created_at.localeCompare(b.created_at);
+        default:
+          return b.created_at.localeCompare(a.created_at);
       }
     });
     return sorted;
@@ -194,7 +218,10 @@ export default function AdminMembersPage() {
   const rows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   /* -------------------------------- actions --------------------------------- */
-  async function runAccountOp(memberId: string, op: () => Promise<unknown>): Promise<boolean> {
+  async function runAccountOp(
+    memberId: string,
+    op: () => Promise<unknown>,
+  ): Promise<boolean> {
     if (busyId != null) return false;
     setBusyId(memberId);
     setLoadError(null);
@@ -222,8 +249,15 @@ export default function AdminMembersPage() {
       }),
     );
     if (ok) {
-      setIssued({ email: target.email ?? memberName(target), password, purpose: "reset" });
-      toast.push("success", `Temporary password issued for ${target.email ?? memberName(target)}.`);
+      setIssued({
+        email: target.email ?? memberName(target),
+        password,
+        purpose: "reset",
+      });
+      toast.push(
+        "success",
+        `Temporary password issued for ${target.email ?? memberName(target)}.`,
+      );
     }
   }
 
@@ -243,7 +277,10 @@ export default function AdminMembersPage() {
   }
 
   async function handleToggleDisable(member: OrgMember) {
-    const op = member.status === "disabled" ? enableMember(member.id) : disableMember(member.id);
+    const op =
+      member.status === "disabled"
+        ? enableMember(member.id)
+        : disableMember(member.id);
     const ok = await runAccountOp(member.id, () => op);
     if (ok) {
       toast.push(
@@ -255,19 +292,23 @@ export default function AdminMembersPage() {
     }
   }
 
-  async function handleUpdateDetails(member: OrgMember, patch: {
-    firstName: string;
-    lastName: string;
-    department: string;
-    jobTitle: string;
-  }): Promise<boolean> {
+  async function handleUpdateDetails(
+    member: OrgMember,
+    patch: {
+      firstName: string;
+      lastName: string;
+      department: string;
+      jobTitle: string;
+    },
+  ): Promise<boolean> {
     if (busyId != null) return false;
     setBusyId(member.id);
     try {
       await updateMember(member.id, {
         firstName: patch.firstName,
         lastName: patch.lastName,
-        department: patch.department.trim() === "" ? null : patch.department.trim(),
+        department:
+          patch.department.trim() === "" ? null : patch.department.trim(),
         jobTitle: patch.jobTitle.trim() === "" ? null : patch.jobTitle.trim(),
       });
       await reload();
@@ -287,24 +328,31 @@ export default function AdminMembersPage() {
       id: "not-clinician",
       label: "Managed by superadmins",
       disabled: true,
-      disabledReason: "Administrators and memberships are managed by the superadmins.",
-      onSelect: () => {},
+      disabledReason:
+        "Administrators and memberships are managed by the superadmins.",
+      onSelect: () => { },
     } satisfies KebabAction;
     if (member.role !== "clinician") return [notClinician];
 
-    const selfGuard = member.id === profile?.id
-      ? {
+    const selfGuard =
+      member.id === profile?.id
+        ? ({
           id: "self-guard",
           label: "You are this account",
           disabled: true,
           disabledReason: "Sign-in security applies to your own account too.",
-          onSelect: () => {},
-        } satisfies KebabAction
-      : null;
+          onSelect: () => { },
+        } satisfies KebabAction)
+        : null;
     if (member.id === profile?.id) return [selfGuard as KebabAction];
 
     return [
-      { id: "edit", label: "Edit details", icon: "edit", onSelect: () => setEditing(member) },
+      {
+        id: "edit",
+        label: "Edit details",
+        icon: "edit",
+        onSelect: () => setEditing(member),
+      },
       {
         id: "temp-password",
         label: "Issue temporary password",
@@ -323,18 +371,18 @@ export default function AdminMembersPage() {
       },
       member.status === "disabled"
         ? {
-            id: "reactivate",
-            label: "Reactivate account",
-            icon: "person_check",
-            onSelect: () => setConfirmToggle(member),
-          }
+          id: "reactivate",
+          label: "Reactivate account",
+          icon: "person_check",
+          onSelect: () => setConfirmToggle(member),
+        }
         : {
-            id: "suspend",
-            label: "Suspend account",
-            icon: "person_cancel",
-            destructive: true,
-            onSelect: () => setConfirmToggle(member),
-          },
+          id: "suspend",
+          label: "Suspend account",
+          icon: "person_cancel",
+          destructive: true,
+          onSelect: () => setConfirmToggle(member),
+        },
     ];
   }
 
@@ -343,27 +391,50 @@ export default function AdminMembersPage() {
 
   /* ------------------------------- confirm state ------------------------------ */
   const [confirmIssue, setConfirmIssue] = useState<OrgMember | null>(null);
-  const [confirmRequest, setConfirmRequest] = useState<PasswordResetRequest | null>(null);
+  const [confirmRequest, setConfirmRequest] =
+    useState<PasswordResetRequest | null>(null);
   const [confirmToggle, setConfirmToggle] = useState<OrgMember | null>(null);
-  const [confirmDismiss, setConfirmDismiss] = useState<PasswordResetRequest | null>(null);
+  const [confirmDismiss, setConfirmDismiss] =
+    useState<PasswordResetRequest | null>(null);
   const [editing, setEditing] = useState<OrgMember | null>(null);
 
   /* ---------------------------------- render --------------------------------- */
   const loading = members == null || requests == null;
   const memberCount = members?.length ?? 0;
-  const clinicianCount = (members ?? []).filter((member) => member.role === "clinician").length;
-  const adminCount = (members ?? []).filter((member) => member.role === "admin").length;
+  const clinicianCount = (members ?? []).filter(
+    (member) => member.role === "clinician",
+  ).length;
+  const adminCount = (members ?? []).filter(
+    (member) => member.role === "admin",
+  ).length;
   const plural = (value: number, word: string) =>
     `${value} ${word}${value === 1 ? "" : "s"}`;
 
   const activeFilters = useMemo(() => {
-    const chips: Array<{ id: string; label: string; clear: Record<string, null> }> = [];
-    if (q.trim() !== "") chips.push({ id: "q", label: `Search: “${q.trim()}”`, clear: { q: null } });
+    const chips: Array<{
+      id: string;
+      label: string;
+      clear: Record<string, null>;
+    }> = [];
+    if (q.trim() !== "")
+      chips.push({
+        id: "q",
+        label: `Search: “${q.trim()}”`,
+        clear: { q: null },
+      });
     if (role !== "all") {
-      chips.push({ id: "role", label: role === "admin" ? "Role: Admin" : "Role: Clinician", clear: { role: null } });
+      chips.push({
+        id: "role",
+        label: role === "admin" ? "Role: Admin" : "Role: Clinician",
+        clear: { role: null },
+      });
     }
     if (statusKey !== "all") {
-      chips.push({ id: "status", label: StatusLabels[statusKey], clear: { status: null } });
+      chips.push({
+        id: "status",
+        label: StatusLabels[statusKey],
+        clear: { status: null },
+      });
     }
     return chips;
   }, [q, role, statusKey]);
@@ -449,9 +520,11 @@ export default function AdminMembersPage() {
       {/* Member list card */}
       <Panel
         title="Directory"
-        subtitle={loading
-          ? "Loading…"
-          : `${plural(memberCount, "member")} · ${plural(clinicianCount, "clinician")} · ${plural(adminCount, "administrator")}`}
+        subtitle={
+          loading
+            ? "Loading…"
+            : `${plural(memberCount, "member")} · ${plural(clinicianCount, "clinician")} · ${plural(adminCount, "administrator")}`
+        }
       >
         {/* Toolbar: search / role / status / clear */}
         <div className="mb-4 flex flex-wrap items-end gap-3">
@@ -467,7 +540,11 @@ export default function AdminMembersPage() {
                 setSearchDraft(value);
                 window.clearTimeout(searchDebounce.current);
                 searchDebounce.current = window.setTimeout(
-                  () => patchParams({ q: value.trim() === "" ? null : value.trim() }, "replace"),
+                  () =>
+                    patchParams(
+                      { q: value.trim() === "" ? null : value.trim() },
+                      "replace",
+                    ),
                   250,
                 );
               }}
@@ -478,7 +555,9 @@ export default function AdminMembersPage() {
             <span className="text-sm font-medium text-theme-gray">Role</span>
             <select
               value={role}
-              onChange={(event) => patchParams({ role: event.target.value }, "replace")}
+              onChange={(event) =>
+                patchParams({ role: event.target.value }, "replace")
+              }
               className="w-40 rounded-control border border-theme-line bg-white px-3 py-2 text-sm text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-maroon/25"
             >
               <option value="all">All</option>
@@ -491,11 +570,15 @@ export default function AdminMembersPage() {
             <span className="text-sm font-medium text-theme-gray">Status</span>
             <select
               value={statusKey}
-              onChange={(event) => patchParams({ status: event.target.value }, "replace")}
+              onChange={(event) =>
+                patchParams({ status: event.target.value }, "replace")
+              }
               className="w-52 rounded-control border border-theme-line bg-white px-3 py-2 text-sm text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-maroon/25"
             >
               {(Object.keys(StatusLabels) as Array<StatusKey>).map((key) => (
-                <option key={key} value={key}>{StatusLabels[key]}</option>
+                <option key={key} value={key}>
+                  {StatusLabels[key]}
+                </option>
               ))}
             </select>
           </label>
@@ -503,7 +586,9 @@ export default function AdminMembersPage() {
           {activeFilters.length > 0 ? (
             <button
               type="button"
-              onClick={() => patchParams({ q: null, role: null, status: null }, "push")}
+              onClick={() =>
+                patchParams({ q: null, role: null, status: null }, "push")
+              }
               className="px-3 py-2 text-xs font-semibold text-theme-maroon underline-offset-4 hover:underline"
             >
               Clear filters
@@ -532,8 +617,16 @@ export default function AdminMembersPage() {
             title="No clinicians yet"
             body="Create the first clinician account — they sign in with the temporary password you hand over, then set their own."
             action={
-              <PrimaryButton type="button" className="w-auto" onClick={() => patchParams({ create: "1" }, "push")}>
-                <MsIcon name="person_add" className="text-[18px]" optical={20} />
+              <PrimaryButton
+                type="button"
+                className="w-auto"
+                onClick={() => patchParams({ create: "1" }, "push")}
+              >
+                <MsIcon
+                  name="person_add"
+                  className="text-[18px]"
+                  optical={20}
+                />
                 Create clinician account
               </PrimaryButton>
             }
@@ -546,7 +639,9 @@ export default function AdminMembersPage() {
             action={
               <button
                 type="button"
-                onClick={() => patchParams({ q: null, role: null, status: null }, "push")}
+                onClick={() =>
+                  patchParams({ q: null, role: null, status: null }, "push")
+                }
                 className="rounded-control border border-theme-line bg-white px-4 py-2 text-sm font-semibold text-theme-ink transition-colors hover:bg-theme-light-gray"
               >
                 Clear filters
@@ -558,40 +653,75 @@ export default function AdminMembersPage() {
             <table className="w-full min-w-[760px] text-left text-sm">
               <thead>
                 <tr className="border-b border-theme-line text-xs uppercase tracking-wider text-theme-gray">
-                  <SortableTh label="Member" column="name" sort={sort} onChange={(next) => patchParams({ sort: next }, "push")} />
+                  <SortableTh
+                    label="Member"
+                    column="name"
+                    sort={sort}
+                    onChange={(next) => patchParams({ sort: next }, "push")}
+                  />
                   <th className="pb-2 pr-4 font-semibold">Role</th>
                   <th className="pb-2 pr-4 font-semibold">Status</th>
                   <th className="pb-2 pr-4 font-semibold">Job title</th>
-                  <SortableTh label="Joined" column="created" sort={sort} onChange={(next) => patchParams({ sort: next }, "push")} />
+                  <SortableTh
+                    label="Joined"
+                    column="created"
+                    sort={sort}
+                    onChange={(next) => patchParams({ sort: next }, "push")}
+                  />
                   <th className="pb-2 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-theme-line">
                 {rows.map((member) => (
-                  <tr key={member.id} className="transition-colors hover:bg-theme-cream/40">
+                  <tr
+                    key={member.id}
+                    className="transition-colors hover:bg-theme-cream/40"
+                  >
                     <td className="py-3 pr-4">
                       <div className="flex items-center gap-3">
-                        <Avatar first={member.first_name} last={member.last_name} size="sm" />
+                        <Avatar
+                          first={member.first_name}
+                          last={member.last_name}
+                          size="sm"
+                        />
                         <div className="min-w-0">
-                          <div className="truncate font-semibold text-theme-ink">{memberName(member)}</div>
-                          <div className="truncate text-xs text-theme-gray">{member.email}</div>
+                          <div className="truncate font-semibold text-theme-ink">
+                            {memberName(member)}
+                          </div>
+                          <div className="truncate text-xs text-theme-gray">
+                            {member.email}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="py-3 pr-4">
-                      {member.role === "admin"
-                        ? <Badge tone="maroon" icon="shield">Admin</Badge>
-                        : <Badge icon="stethoscope">Clinician</Badge>}
+                      {member.role === "admin" ? (
+                        <Badge tone="maroon" icon="shield">
+                          Admin
+                        </Badge>
+                      ) : (
+                        <Badge icon="stethoscope">Clinician</Badge>
+                      )}
                     </td>
-                    <td className="py-3 pr-4"><StatusBadge member={member} requested={requestedIds.has(member.id)} /></td>
+                    <td className="py-3 pr-4">
+                      <StatusBadge
+                        member={member}
+                        requested={requestedIds.has(member.id)}
+                      />
+                    </td>
                     <td className="py-3 pr-4 text-theme-ink-soft">
-                      {[member.job_title, member.department].filter(Boolean).join(" · ") || "—"}
+                      {[member.job_title, member.department]
+                        .filter(Boolean)
+                        .join(" · ") || "—"}
                     </td>
                     <td className="py-3 pr-4 text-theme-gray">
                       <RelativeTime iso={member.created_at} />
                     </td>
                     <td className="py-3 text-right">
-                      <KebabMenu items={kebabFor(member)} busy={busyId != null && busyId !== member.id} />
+                      <KebabMenu
+                        items={kebabFor(member)}
+                        busy={busyId != null && busyId !== member.id}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -602,31 +732,40 @@ export default function AdminMembersPage() {
 
         {filtered.length > PAGE_SIZE ? (
           <div className="mt-4">
-            <Pagination page={safePage} pageCount={pageCount} onChange={(next) => patchParams({ page: String(next) }, "push")} />
+            <Pagination
+              page={safePage}
+              pageCount={pageCount}
+              onChange={(next) => patchParams({ page: String(next) }, "push")}
+            />
           </div>
         ) : null}
       </Panel>
 
-  /* Modal stack ------------------------------------------------------------ */
-  {createOpen ? (
-    <CreateClinicianModal
-      onClose={() => patchParams({ create: null }, "push")}
-      onSubmit={async (input) => {
-        setLoadError(null);
-        try {
-          await createClinician(input);
-          await reload();
-          patchParams({ create: null }, "push");
-          setIssued({ email: input.email, password: input.tempPassword, purpose: "created" });
-          toast.push("success", "Clinician account created.");
-        } catch (cause) {
-          console.error("[palse create clinician]", cause);
-          // surfaced inside the modal
-          throw cause instanceof Error ? cause : new Error("Could not create the account.");
-        }
-      }}
-    />
-  ) : null}
+      {createOpen ? (
+        <CreateClinicianModal
+          onClose={() => patchParams({ create: null }, "push")}
+          onSubmit={async (input) => {
+            setLoadError(null);
+            try {
+              await createClinician(input);
+              await reload();
+              patchParams({ create: null }, "push");
+              setIssued({
+                email: input.email,
+                password: input.tempPassword,
+                purpose: "created",
+              });
+              toast.push("success", "Clinician account created.");
+            } catch (cause) {
+              console.error("[palse create clinician]", cause);
+              // surfaced inside the modal
+              throw cause instanceof Error
+                ? cause
+                : new Error("Could not create the account.");
+            }
+          }}
+        />
+      ) : null}
 
       {confirmRequest != null ? (
         <ConfirmDialog
@@ -657,7 +796,11 @@ export default function AdminMembersPage() {
 
       {confirmIssue != null ? (
         <ConfirmDialog
-          title={confirmIssue.must_set_password ? "Re-issue credentials?" : "Issue a temporary password?"}
+          title={
+            confirmIssue.must_set_password
+              ? "Re-issue credentials?"
+              : "Issue a temporary password?"
+          }
           question={`${memberName(confirmIssue)} (${confirmIssue.email}) receives a new temporary password on issue. Any outstanding reset request resolves together with it and their previous password stops working immediately.`}
           confirmLabel="Issue password"
           pending={busyId === confirmIssue.id}
@@ -672,13 +815,19 @@ export default function AdminMembersPage() {
 
       {confirmToggle != null ? (
         <ConfirmDialog
-          title={confirmToggle.status === "disabled" ? "Reactivate account?" : "Suspend account?"}
+          title={
+            confirmToggle.status === "disabled"
+              ? "Reactivate account?"
+              : "Suspend account?"
+          }
           question={
             confirmToggle.status === "disabled"
               ? `${memberName(confirmToggle)} can sign in again immediately after this. Open sessions stay usable.`
               : `${memberName(confirmToggle)} (${confirmToggle.email}) loses app access immediately: sign-in is blocked and open sessions are revoked. Their charted work stays untouched.`
           }
-          confirmLabel={confirmToggle.status === "disabled" ? "Reactivate" : "Suspend"}
+          confirmLabel={
+            confirmToggle.status === "disabled" ? "Reactivate" : "Suspend"
+          }
           destructive={confirmToggle.status !== "disabled"}
           pending={busyId === confirmToggle.id}
           onConfirm={async () => {
@@ -722,22 +871,52 @@ const StatusLabels: Record<StatusKey, string> = {
   reset_requested: "Reset requested",
 };
 
-function StatusBadge({ member, requested }: { member: OrgMember; requested: boolean }) {
+function StatusBadge({
+  member,
+  requested,
+}: {
+  member: OrgMember;
+  requested: boolean;
+}) {
   if (member.status === "disabled") {
-    return <Badge tone="danger" icon="person_cancel">Suspended</Badge>;
+    return (
+      <Badge tone="danger" icon="person_cancel">
+        Suspended
+      </Badge>
+    );
   }
   if (member.must_set_password) {
-    return <Badge tone="warning" icon="key">Pending first sign-in</Badge>;
+    return (
+      <Badge tone="warning" icon="key">
+        Pending first sign-in
+      </Badge>
+    );
   }
   if (requested) {
-    return <Badge tone="warning" icon="support_agent">Reset requested</Badge>;
+    return (
+      <Badge tone="warning" icon="support_agent">
+        Reset requested
+      </Badge>
+    );
   }
-  return <Badge tone="success" icon="check_circle">Active</Badge>;
+  return (
+    <Badge tone="success" icon="check_circle">
+      Active
+    </Badge>
+  );
 }
 
-const SortIndicator = ({ active, ascending }: { active: boolean; ascending: boolean }) => (
+const SortIndicator = ({
+  active,
+  ascending,
+}: {
+  active: boolean;
+  ascending: boolean;
+}) => (
   <MsIcon
-    name={active ? (ascending ? "arrow_upward" : "arrow_downward") : "unfold_more"}
+    name={
+      active ? (ascending ? "arrow_upward" : "arrow_downward") : "unfold_more"
+    }
     className={`text-[14px] ${active ? "text-theme-maroon" : "text-theme-gray"}`}
     optical={14}
   />
@@ -760,11 +939,15 @@ function SortableTh({
     <th className="pb-2 pr-4 font-semibold">
       <button
         type="button"
-        onClick={() => onChange(
-          active
-            ? (ascending ? (`${column}_desc` as MemberSort) : (`${column}_asc` as MemberSort))
-            : (`${column}_asc` as MemberSort),
-        )}
+        onClick={() =>
+          onChange(
+            active
+              ? ascending
+                ? (`${column}_desc` as MemberSort)
+                : (`${column}_asc` as MemberSort)
+              : (`${column}_asc` as MemberSort),
+          )
+        }
         className="inline-flex items-center gap-1 uppercase tracking-wider transition-colors hover:text-theme-ink"
       >
         {label}
@@ -788,14 +971,20 @@ function CreateClinicianModal({
   const [email, setEmail] = useState("");
   const [department, setDepartment] = useState("");
   const [jobTitle, setJobTitle] = useState("");
-  const [tempPassword, setTempPassword] = useState(() => generateTempPassword());
+  const [tempPassword, setTempPassword] = useState(() =>
+    generateTempPassword(),
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
 
-  const dirty = firstName.trim() !== "" || lastName.trim() !== "" || email.trim() !== "" ||
-    department.trim() !== "" || jobTitle.trim() !== "";
+  const dirty =
+    firstName.trim() !== "" ||
+    lastName.trim() !== "" ||
+    email.trim() !== "" ||
+    department.trim() !== "" ||
+    jobTitle.trim() !== "";
 
   // Leaving the console (Back / any link) with a dirty_CREATE form asks first.
   const blocker = useBlocker(dirty);
@@ -810,21 +999,24 @@ function CreateClinicianModal({
   }
 
   const fieldErrors = {
-    firstName: firstName.trim().length === 0
-      ? "Enter the clinician's first name."
-      : firstName.trim().length > 100
-        ? "Maximum 100 characters."
-        : null,
-    lastName: lastName.trim().length === 0
-      ? "Enter the clinician's last name."
-      : lastName.trim().length > 100
-        ? "Maximum 100 characters."
-        : null,
-    email: email.trim().length === 0
-      ? "Enter the clinician's email address."
-      : !isEmailFormat(email.trim())
-        ? "Enter a valid email address."
-        : null,
+    firstName:
+      firstName.trim().length === 0
+        ? "Enter the clinician's first name."
+        : firstName.trim().length > 100
+          ? "Maximum 100 characters."
+          : null,
+    lastName:
+      lastName.trim().length === 0
+        ? "Enter the clinician's last name."
+        : lastName.trim().length > 100
+          ? "Maximum 100 characters."
+          : null,
+    email:
+      email.trim().length === 0
+        ? "Enter the clinician's email address."
+        : !isEmailFormat(email.trim())
+          ? "Enter a valid email address."
+          : null,
   };
 
   function valid(): boolean {
@@ -857,26 +1049,65 @@ function CreateClinicianModal({
               tempPassword,
             });
           } catch (caught) {
-            setError(typeof caught === "string" ? caught : guide(new Error("Failed"), "Could not create the account."));
+            setError(
+              typeof caught === "string"
+                ? caught
+                : guide(new Error("Failed"), "Could not create the account."),
+            );
           } finally {
             setPending(false);
           }
         }}
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormInput id="clinician-first-name" label="First name" required value={firstName}
-            onChange={(event) => setFirstName(event.target.value)} error={fieldErrors.firstName} disabled={pending} />
-          <FormInput id="clinician-last-name" label="Last name" required value={lastName}
-            onChange={(event) => setLastName(event.target.value)} error={fieldErrors.lastName} disabled={pending} />
+          <FormInput
+            id="clinician-first-name"
+            label="First name"
+            required
+            value={firstName}
+            onChange={(event) => setFirstName(event.target.value)}
+            error={fieldErrors.firstName}
+            disabled={pending}
+          />
+          <FormInput
+            id="clinician-last-name"
+            label="Last name"
+            required
+            value={lastName}
+            onChange={(event) => setLastName(event.target.value)}
+            error={fieldErrors.lastName}
+            disabled={pending}
+          />
         </div>
-        <FormInput id="clinician-email" label="Email address" required hint="Used to sign in." type="email"
-          autoComplete="off" value={email} onChange={(event) => setEmail(event.target.value)}
-          error={fieldErrors.email} disabled={pending} />
+        <FormInput
+          id="clinician-email"
+          label="Email address"
+          required
+          hint="Used to sign in."
+          type="email"
+          autoComplete="off"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          error={fieldErrors.email}
+          disabled={pending}
+        />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormInput id="clinician-department" label="Department (optional)" placeholder="e.g. Neonatology"
-            value={department} onChange={(event) => setDepartment(event.target.value)} disabled={pending} />
-          <FormInput id="clinician-job-title" label="Job title (optional)" placeholder="e.g. Nurse"
-            value={jobTitle} onChange={(event) => setJobTitle(event.target.value)} disabled={pending} />
+          <FormInput
+            id="clinician-department"
+            label="Department (optional)"
+            placeholder="e.g. Neonatology"
+            value={department}
+            onChange={(event) => setDepartment(event.target.value)}
+            disabled={pending}
+          />
+          <FormInput
+            id="clinician-job-title"
+            label="Job title (optional)"
+            placeholder="e.g. Nurse"
+            value={jobTitle}
+            onChange={(event) => setJobTitle(event.target.value)}
+            disabled={pending}
+          />
         </div>
 
         <div className="rounded-control border border-theme-line bg-theme-light-gray px-4 py-3">
@@ -897,7 +1128,11 @@ function CreateClinicianModal({
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 className="rounded-md p-1.5 text-theme-gray transition-colors hover:bg-theme-line/50 hover:text-theme-ink"
               >
-                <MsIcon name={showPassword ? "visibility_off" : "visibility"} className="text-[18px]" optical={18} />
+                <MsIcon
+                  name={showPassword ? "visibility_off" : "visibility"}
+                  className="text-[18px]"
+                  optical={18}
+                />
               </button>
               <button
                 type="button"
@@ -914,9 +1149,9 @@ function CreateClinicianModal({
             </div>
           </div>
           <p className="mt-2 text-xs text-theme-ink-soft">
-            Hand this over yourself (in person or via your hospital&apos;s secure
-            channel). The clinician sets a new password on first sign-in — this
-            one stops working after that.
+            Hand this over yourself (in person or via your hospital&apos;s
+            secure channel). The clinician sets a new password on first sign-in
+            — this one stops working after that.
           </p>
         </div>
 
@@ -974,7 +1209,12 @@ function EditDetailsModal({
   member: OrgMember;
   pending: boolean;
   onClose: () => void;
-  onSubmit: (patch: { firstName: string; lastName: string; department: string; jobTitle: string }) => Promise<void>;
+  onSubmit: (patch: {
+    firstName: string;
+    lastName: string;
+    department: string;
+    jobTitle: string;
+  }) => Promise<void>;
 }) {
   const [firstName, setFirstName] = useState(member.first_name);
   const [lastName, setLastName] = useState(member.last_name);
@@ -1005,16 +1245,40 @@ function EditDetailsModal({
         }}
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormInput id="edit-first-name" label="First name" required value={firstName}
-            onChange={(event) => setFirstName(event.target.value)} error={fieldErrors.firstName} disabled={pending} />
-          <FormInput id="edit-last-name" label="Last name" required value={lastName}
-            onChange={(event) => setLastName(event.target.value)} error={fieldErrors.lastName} disabled={pending} />
+          <FormInput
+            id="edit-first-name"
+            label="First name"
+            required
+            value={firstName}
+            onChange={(event) => setFirstName(event.target.value)}
+            error={fieldErrors.firstName}
+            disabled={pending}
+          />
+          <FormInput
+            id="edit-last-name"
+            label="Last name"
+            required
+            value={lastName}
+            onChange={(event) => setLastName(event.target.value)}
+            error={fieldErrors.lastName}
+            disabled={pending}
+          />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormInput id="edit-department" label="Department (optional)" value={department}
-            onChange={(event) => setDepartment(event.target.value)} disabled={pending} />
-          <FormInput id="edit-job-title" label="Job title (optional)" value={jobTitle}
-            onChange={(event) => setJobTitle(event.target.value)} disabled={pending} />
+          <FormInput
+            id="edit-department"
+            label="Department (optional)"
+            value={department}
+            onChange={(event) => setDepartment(event.target.value)}
+            disabled={pending}
+          />
+          <FormInput
+            id="edit-job-title"
+            label="Job title (optional)"
+            value={jobTitle}
+            onChange={(event) => setJobTitle(event.target.value)}
+            disabled={pending}
+          />
         </div>
         {error != null ? <Notice tone="danger">{error}</Notice> : null}
         <div className="flex justify-end gap-3 border-t border-theme-line pt-4">
@@ -1035,19 +1299,33 @@ function EditDetailsModal({
 
 /* --------------------------- issued password show ---------------------------- */
 
-function IssuedPasswordModal({ issued, onClose }: { issued: IssuedPassword; onClose: () => void }) {
-  const headline = issued.purpose === "created" ? "Account created" : "Temporary password issued";
+function IssuedPasswordModal({
+  issued,
+  onClose,
+}: {
+  issued: IssuedPassword;
+  onClose: () => void;
+}) {
+  const headline =
+    issued.purpose === "created"
+      ? "Account created"
+      : "Temporary password issued";
 
   return (
     <Modal title={headline} onClose={onClose}>
       <Notice tone="warning" className="mb-4">
-        Show this password once, then it&apos;s gone — it is not stored anywhere and cannot be recovered.
+        Show this password once, then it&apos;s gone — it is not stored anywhere
+        and cannot be recovered.
       </Notice>
       <p className="mb-3 text-sm text-theme-gray">
-        Temporary password for <strong className="text-theme-ink">{issued.email}</strong>:
+        Temporary password for{" "}
+        <strong className="text-theme-ink">{issued.email}</strong>:
       </p>
       <div className="flex items-center justify-between gap-3 rounded-control border border-theme-line bg-theme-light-gray px-4 py-3">
-        <code aria-label="Temporary password" className="min-w-0 break-all font-mono text-sm font-bold text-theme-ink">
+        <code
+          aria-label="Temporary password"
+          className="min-w-0 break-all font-mono text-sm font-bold text-theme-ink"
+        >
           {issued.password}
         </code>
         <CopyButton value={issued.password} label="password" />
@@ -1055,7 +1333,10 @@ function IssuedPasswordModal({ issued, onClose }: { issued: IssuedPassword; onCl
       <p className="mt-4 text-sm text-theme-gray">
         The clinician signs in with this password and is immediately asked to
         set a new one. See the{" "}
-        <Link to="/admin/audit-log" className="font-semibold text-theme-maroon underline-offset-4 hover:underline">
+        <Link
+          to="/admin/audit-log"
+          className="font-semibold text-theme-maroon underline-offset-4 hover:underline"
+        >
           audit log
         </Link>{" "}
         for a record of the account change.

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import AuthFormShell from "../components/AuthFormShell.tsx";
+import AuthBackLink from "../components/AuthBackLink.tsx";
 import FormInput from "../components/FormInput.tsx";
 import Notice from "../components/Notice.tsx";
 import PrimaryButton from "../components/PrimaryButton.tsx";
@@ -142,6 +143,8 @@ export default function PasswordResetRequest() {
           Use the email reset instead
         </Link>
       </p>
+
+      <AuthBackLink className="mt-6" to="/signin" label="Back to sign in" />
     </AuthFormShell>
   );
 }
