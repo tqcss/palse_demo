@@ -9,6 +9,15 @@ import { useAuth } from "../../context/useAuth.ts";
 import { useFocusTrap } from "../../hooks/useFocusTrap.ts";
 import { type Organization, getMyOrganization } from "../../lib/admin.ts";
 
+/** Thin maroon bar under the top bar, animated while a route transition runs. */
+function NavProgress() {
+  return (
+    <div aria-hidden="true" className="sticky top-[57px] z-10 h-0.5 overflow-hidden bg-theme-cream">
+      <div className="admin-nav-progress h-full w-full origin-left bg-theme-maroon" />
+    </div>
+  );
+}
+
 const NAV_ITEMS = [
   { to: "/admin", label: "Overview", icon: "dashboard", end: true },
   { to: "/admin/members", label: "Members", icon: "group", end: false },
@@ -40,11 +49,17 @@ export default function AdminLayout() {
   const label = useMemo(() => titleForPath(location.pathname), [location.pathname]);
 
   /* ------------------------------ route effect ----------------------------- */
+  const [progressing, setProgressing] = useState(false);
   useEffect(() => {
     window.scrollTo({ top: 0 });
     // Keyboard focus lands on the <main> landmark (outlined only for focus,
     // which the browser already treats correctly with :focus-visible).
     mainRef.current?.focus({ preventScroll: true });
+    // Thin maroon progress bar for the first frames of every transition
+    // (covers lazy-page chunks too — the skeleton takes over if it's longer).
+    setProgressing(true);
+    const timer = window.setTimeout(() => setProgressing(false), 450);
+    return () => window.clearTimeout(timer);
   }, [location.pathname, location.key]);
 
   /* -------------------------------- org name ------------------------------- */
@@ -166,6 +181,8 @@ export default function AdminLayout() {
           onSignOut={() => void handleSignOut()}
           hamburgerRef={hamburgerRef}
         />
+
+        {progressing ? <NavProgress /> : null}
 
         <main
           ref={mainRef}

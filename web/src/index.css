@@ -105,6 +105,28 @@
   }
 }
 
+/* Navigation progress indicator (AdminLayout): thin maroon swipe under the
+   top bar during route transitions. Reduced-motion turns it into a flash that
+   stops near-full, which still signals "navigating" without movement. */
+@keyframes admin-nav-progress {
+  from {
+    transform: scaleX(0.05);
+    opacity: 1;
+  }
+  60% {
+    transform: scaleX(0.7);
+    opacity: 1;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+
+.admin-nav-progress {
+  animation: admin-nav-progress 450ms ease-in-out forwards;
+}
+
 /* Google Material Symbols (ligature icon font loaded via index.html CDN
    link). Size these with font-size/text-* utilities like any glyph:
    <span className="ms text-xl">group</span> or via the MsIcon component. */

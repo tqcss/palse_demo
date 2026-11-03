@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import MsIcon from "../../components/MsIcon.tsx";
 import Notice from "../../components/Notice.tsx";
@@ -556,9 +556,19 @@ function AuditRow({
         <td className="py-3 pr-4 font-medium text-theme-ink">{describeAuditEntry(row)}</td>
         <td className="py-3 pr-4">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span title={row.actor_email ?? "System"} className="text-theme-ink-soft">
-              {row.actor_email ?? "System"}
-            </span>
+            {row.actor_email != null ? (
+              <Link
+                to={`/admin/members?q=${encodeURIComponent(row.actor_email)}`}
+                title={`See members matching ${row.actor_email}`}
+                className="font-medium text-theme-maroon underline-offset-4 hover:underline"
+              >
+                {row.actor_email}
+              </Link>
+            ) : (
+              <span title="No actor recorded — performed by the system">
+                System
+              </span>
+            )}
             {isMe || isMeEmail ? (
               <Badge tone="maroon" className="uppercase">You</Badge>
             ) : null}
