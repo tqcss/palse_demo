@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-import Modal from "../components/Modal.tsx";
 import Notice from "../components/Notice.tsx";
 import Panel from "../components/Panel.tsx";
 import PatientModal from "../components/PatientModal.tsx";
+import PrimaryButton from "../components/PrimaryButton.tsx";
 import RiskBadge from "../components/RiskBadge.tsx";
+import ConfirmDialog from "../components/ui/ConfirmDialog.tsx";
+import PageHeader from "../components/ui/PageHeader.tsx";
+import { Skeleton } from "../components/ui/Skeleton.tsx";
+import EmptyState from "../components/ui/EmptyState.tsx";
 import { deletePatient, listPatients } from "../lib/db.ts";
 import { guide } from "../lib/authErrors.ts";
 import type { RiskLevel } from "../lib/patient.ts";
@@ -119,27 +123,24 @@ export default function PatientsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-1.5">
-          <p className="text-xs font-bold uppercase tracking-wide text-theme-maroon">
-            Clinical registry
-          </p>
-          <h1 className="text-2xl font-bold text-theme-ink">Patients</h1>
-          <p className="text-sm text-theme-gray">
-            {loading
-              ? "Loading registry…"
-              : `${counts.all} registered ${counts.all === 1 ? "patient" : "patients"} · risk levels are set manually until the prediction engine is live`}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setAddOpen(true)}
-          className="rounded-lg bg-theme-maroon px-4 py-2.5 text-sm font-semibold text-theme-white transition-colors hover:bg-theme-maroon-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-maroon"
-        >
-          ＋ Add patient
-        </button>
-      </header>
+      <PageHeader
+        eyebrow="Clinical registry"
+        title="Patients"
+        subtitle={
+          loading
+            ? "Loading registry…"
+            : `${counts.all} registered ${counts.all === 1 ? "patient" : "patients"} · risk levels are set manually until the prediction engine is live`
+        }
+        actions={
+          <PrimaryButton
+            type="button"
+            inline
+            onClick={() => setAddOpen(true)}
+          >
+            ＋ Add patient
+          </PrimaryButton>
+        }
+      />
 
       {loadError ? <Notice tone="danger">{loadError}</Notice> : null}
       {actionError ? <Notice tone="danger">{actionError}</Notice> : null}
@@ -204,40 +205,22 @@ export default function PatientsPage() {
       ) : null}
 
       {deleting != null ? (
-        <Modal title="Delete patient" onClose={() => setDeleting(null)}>
-          <div className="flex flex-col gap-5">
-            <p className="text-sm text-theme-ink-soft">
+        <ConfirmDialog
+          title="Delete patient"
+          tone="danger"
+          pending={deletePending}
+          confirmLabel="Delete patient"
+          onClose={() => setDeleting(null)}
+          onConfirm={() => void confirmDelete()}
+          body={
+            <p>
               Delete <strong>{formatPatientName(deleting)}</strong>
               {deleting.mrn ? ` (MRN ${deleting.mrn})` : ""}? All of their
               assessment records are removed together with the patient. This
               cannot be undone.
             </p>
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setDeleting(null)}
-                className="rounded-lg border border-theme-line px-4 py-2 text-sm font-semibold text-theme-ink transition-colors hover:bg-theme-light-gray"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={deletePending}
-                aria-busy={deletePending}
-                onClick={() => void confirmDelete()}
-                className="flex items-center gap-2 rounded-lg bg-risk-high-fg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-risk-high-fg disabled:opacity-60"
-              >
-                {deletePending ? (
-                  <span
-                    aria-hidden
-                    className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
-                  />
-                ) : null}
-                Delete patient
-              </button>
-            </div>
-          </div>
-        </Modal>
+          }
+        />
       ) : null}
     </div>
   );
@@ -257,7 +240,7 @@ function PatientTable({
   return (
     <>
       {/* Desktop table */}
-      <div className="hidden overflow-hidden rounded-xl border border-theme-line bg-white shadow-sm md:block">
+      <div className="hidden overflow-hidden rounded-card border border-theme-line bg-white shadow-card md:block">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-theme-line bg-theme-light-gray/50 text-left text-xs font-bold uppercase tracking-wide text-theme-gray">
@@ -321,7 +304,7 @@ function PatientTable({
         {patients.map((patient) => (
           <li
             key={patient.id}
-            className="rounded-xl border border-theme-line bg-white p-4 shadow-sm"
+            className="rounded-card border border-theme-line bg-white p-4 shadow-card"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -344,21 +327,21 @@ function PatientTable({
               <button
                 type="button"
                 onClick={() => onEdit(patient.id)}
-                className="flex-1 rounded-lg border border-theme-line px-3 py-2 text-xs font-semibold text-theme-ink transition-colors hover:bg-theme-light-gray"
+                className="flex-1 rounded-control border border-theme-line px-3 py-2 text-xs font-semibold text-theme-ink transition-colors hover:bg-theme-light-gray"
               >
                 Edit
               </button>
               <button
                 type="button"
                 onClick={() => onMonitor(patient.id)}
-                className="flex-1 rounded-lg border border-theme-line px-3 py-2 text-xs font-semibold text-theme-ink transition-colors hover:bg-theme-light-gray"
+                className="flex-1 rounded-control border border-theme-line px-3 py-2 text-xs font-semibold text-theme-ink transition-colors hover:bg-theme-light-gray"
               >
                 Monitor
               </button>
               <button
                 type="button"
                 onClick={() => onDelete(patient)}
-                className="flex-1 rounded-lg border border-theme-line px-3 py-2 text-xs font-semibold text-risk-high-fg transition-colors hover:bg-risk-high-bg"
+                className="flex-1 rounded-control border border-theme-line px-3 py-2 text-xs font-semibold text-risk-high-fg transition-colors hover:bg-risk-high-bg"
               >
                 Delete
               </button>
@@ -399,10 +382,7 @@ function LoadingList() {
   return (
     <div className="flex flex-col gap-3" aria-hidden>
       {[0, 1, 2].map((row) => (
-        <div
-          key={row}
-          className="h-16 animate-pulse rounded-xl border border-theme-line bg-white/70"
-        />
+        <Skeleton key={row} className="h-16 w-full rounded-card" />
       ))}
     </div>
   );
@@ -418,24 +398,25 @@ function EmptyList({
   onAdd: () => void;
 }) {
   return (
-    <Panel className="items-center gap-4 py-14 text-center">
-      <h2 className="text-lg font-bold text-theme-ink">
-        {isRegistryEmpty
-          ? "The registry is empty"
-          : `No ${filter === "pending" ? "pending" : `${filter}-risk`} patients`}
-      </h2>
-      <p className="max-w-sm text-sm text-theme-gray">
-        {isRegistryEmpty
-          ? "Register the first patient to start running neonatal sepsis assessments."
-          : "Try a different risk filter, or register a new patient."}
-      </p>
-      <button
-        type="button"
-        onClick={onAdd}
-        className="rounded-lg bg-theme-maroon px-5 py-2.5 text-sm font-semibold text-theme-white transition-colors hover:bg-theme-maroon-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-maroon"
-      >
-        ＋ Add patient
-      </button>
+    <Panel className="items-center gap-1 py-10 text-center">
+      <EmptyState
+        icon="person_add"
+        title={
+          isRegistryEmpty
+            ? "The registry is empty"
+            : `No ${filter === "pending" ? "pending" : `${filter}-risk`} patients`
+        }
+        body={
+          isRegistryEmpty
+            ? "Register the first patient to start running neonatal sepsis assessments."
+            : "Try a different risk filter, or register a new patient."
+        }
+        action={
+          <PrimaryButton type="button" inline onClick={onAdd}>
+            ＋ Add patient
+          </PrimaryButton>
+        }
+      />
     </Panel>
   );
 }

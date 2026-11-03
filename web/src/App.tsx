@@ -48,6 +48,14 @@ function AdminSection({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Clinical page wrapper: a rendering crash must not blank the whole pane like
+ * a broken admin page must not. Same retryable boundary the console uses.
+ */
+function ClinicalSection({ children }: { children: React.ReactNode }) {
+  return <ErrorBoundary>{children}</ErrorBoundary>;
+}
+
 function App() {
   const { recovering, clearRecovery, idling, clearIdle } = useAuth();
   const navigate = useNavigate();
@@ -141,13 +149,19 @@ function App() {
             </RequireAuth>
           }
         >
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/patients" element={<PatientsPage />} />
-          <Route path="/patients/:id/edit" element={<EditPatientPage />} />
-          <Route path="/monitor" element={<MonitorPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/profile/security" element={<ProfileSecurityPage />} />
+          <Route path="/dashboard" element={<ClinicalSection><Dashboard /></ClinicalSection>} />
+          <Route path="/patients" element={<ClinicalSection><PatientsPage /></ClinicalSection>} />
+          <Route
+            path="/patients/:id/edit"
+            element={<ClinicalSection><EditPatientPage /></ClinicalSection>}
+          />
+          <Route path="/monitor" element={<ClinicalSection><MonitorPage /></ClinicalSection>} />
+          <Route path="/reports" element={<ClinicalSection><ReportsPage /></ClinicalSection>} />
+          <Route path="/profile" element={<ClinicalSection><ProfilePage /></ClinicalSection>} />
+          <Route
+            path="/profile/security"
+            element={<ClinicalSection><ProfileSecurityPage /></ClinicalSection>}
+          />
         </Route>
 
         <Route path="/" element={<HomeRedirect />} />

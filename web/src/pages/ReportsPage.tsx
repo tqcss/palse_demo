@@ -3,7 +3,11 @@ import { Link } from "react-router-dom";
 
 import Notice from "../components/Notice.tsx";
 import Panel from "../components/Panel.tsx";
+import PrimaryButton from "../components/PrimaryButton.tsx";
 import RiskBadge from "../components/RiskBadge.tsx";
+import PageHeader from "../components/ui/PageHeader.tsx";
+import { Skeleton } from "../components/ui/Skeleton.tsx";
+import EmptyState from "../components/ui/EmptyState.tsx";
 import { assessmentPrediction, listAllAssessments, listPatients, riskLevelFromLabel } from "../lib/db.ts";
 import type { PredictionResult } from "../lib/ml.ts";
 import { guide } from "../lib/authErrors.ts";
@@ -25,7 +29,7 @@ const TIER_COLORS: Record<RiskLevel, string> = {
   high: "bg-risk-high-fg",
   moderate: "bg-risk-moderate-fg",
   low: "bg-risk-low-fg",
-  pending: "bg-theme-gray",
+  pending: "bg-risk-pending-fg",
 };
 
 const TIER_LABELS: Record<RiskLevel, string> = {
@@ -121,29 +125,22 @@ export default function ReportsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-1.5">
-          <p className="text-xs font-bold uppercase tracking-wide text-theme-maroon">
-            Reports &amp; analytics
-          </p>
-          <h1 className="text-2xl font-bold text-theme-ink">
-            Comprehensive sepsis prediction insights
-          </h1>
-          <p className="text-sm text-theme-gray">
-            Aggregated from the clinical data already recorded in this team&apos;s
-            registry.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          disabled={loading || generating}
-          onClick={() => void handleGenerate()}
-          className="rounded-lg bg-theme-maroon px-4 py-2.5 text-sm font-semibold text-theme-white transition-colors hover:bg-theme-maroon-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-maroon disabled:opacity-60"
-        >
-          {generating ? "Preparing…" : "Generate Report"}
-        </button>
-      </header>
+      <PageHeader
+        eyebrow="Reports &amp; analytics"
+        title="Comprehensive sepsis prediction insights"
+        subtitle="Aggregated from the clinical data already recorded in this team's registry."
+        actions={
+          <PrimaryButton
+            type="button"
+            inline
+            disabled={loading || generating}
+            pending={generating}
+            onClick={() => void handleGenerate()}
+          >
+            Generate Report
+          </PrimaryButton>
+        }
+      />
 
       {loadError ? <Notice tone="danger">{loadError}</Notice> : null}
       {generatedName ? (
@@ -156,10 +153,7 @@ export default function ReportsPage() {
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-hidden>
           {[0, 1, 2, 3].map((card) => (
-            <div
-              key={card}
-              className="h-32 animate-pulse rounded-xl border border-theme-line bg-white/70"
-            />
+            <Skeleton key={card} className="h-32 rounded-card" />
           ))}
         </div>
       ) : (
@@ -220,20 +214,22 @@ export default function ReportsPage() {
             subtitle="The eight most recent records across the whole team."
           >
             {recent.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 py-8 text-center">
-                <p className="text-sm text-theme-gray">
-                  No assessments recorded yet.
-                </p>
-                <Link
-                  to="/dashboard"
-                  className="text-sm font-semibold text-theme-maroon underline-offset-4 hover:underline"
-                >
-                  Run the first assessment →
-                </Link>
-              </div>
+              <EmptyState
+                icon="monitoring"
+                title="No assessments recorded yet"
+                body="Run the first assessment from the dashboard to populate this report."
+                action={
+                  <Link
+                    to="/dashboard"
+                    className="text-sm font-semibold text-theme-maroon underline-offset-4 hover:underline"
+                  >
+                    Run the first assessment →
+                  </Link>
+                }
+              />
             ) : (
               <>
-                <div className="hidden overflow-x-auto rounded-lg border border-theme-line md:block">
+                <div className="hidden overflow-x-auto rounded-card border border-theme-line md:block">
                   <table className="w-full border-collapse text-sm">
                     <thead>
                       <tr className="border-b border-theme-line bg-theme-light-gray/50 text-left text-xs font-bold uppercase tracking-wide text-theme-gray">
@@ -298,7 +294,7 @@ export default function ReportsPage() {
                   {recent.map((entry) => (
                     <li
                       key={entry.id}
-                      className="rounded-lg border border-theme-line bg-white p-3.5"
+                      className="rounded-card border border-theme-line bg-white p-3.5"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-semibold text-theme-ink">
@@ -391,7 +387,7 @@ function StatCard({
   muted?: boolean;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-theme-line bg-white p-5 shadow-sm">
+    <div className="relative overflow-hidden rounded-card border border-theme-line bg-white p-5 shadow-card">
       <span className={`absolute inset-y-0 left-0 w-1 ${accent}`} aria-hidden />
       <p className="text-xs font-bold uppercase tracking-wide text-theme-gray">
         {label}

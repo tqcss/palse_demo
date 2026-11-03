@@ -8,8 +8,9 @@ export default function SideHero() {
         <div
           className="bg-transparent absolute h-400 w-400 bottom--2 right--2"
           style={{
+            // Brand-tinted ghost in the maroon tone family (was an off-brand red).
             background:
-              "radial-gradient(circle,rgba(251, 79, 79, 0.4) 0%, rgba(0, 0, 0, 0) 50%)",
+              "radial-gradient(circle, var(--color-theme-maroon-soft) 0%, rgba(0, 0, 0, 0) 55%)",
           }}
         />
         <img

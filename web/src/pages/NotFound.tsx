@@ -56,7 +56,7 @@ export default function NotFound() {
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 select-none"
       >
-        <span className="text-[26vw] leading-none font-black tracking-tighter text-theme-maroon/5 md:text-72">
+        <span className="text-[26vw] leading-none font-black tracking-tighter text-theme-maroon/5 md:text-[12rem]">
           404
         </span>
       </div>

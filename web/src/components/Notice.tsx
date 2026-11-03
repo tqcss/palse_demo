@@ -3,10 +3,10 @@ import type { ReactNode } from "react";
 type NoticeTone = "info" | "success" | "warning" | "danger";
 
 const TONES = {
-  info: "border-sky-200 bg-sky-50 text-sky-900",
-  success: "border-risk-low-fg/30 bg-risk-low-bg text-risk-low-fg",
-  warning: "border-amber-300 bg-amber-50 text-amber-900",
-  danger: "border-risk-high-fg/25 bg-risk-high-bg text-risk-high-fg",
+  info: "border-info-fg/25 bg-info-bg text-info-fg",
+  success: "border-success-fg/25 bg-success-bg text-success-fg",
+  warning: "border-warning-fg/25 bg-warning-bg text-warning-fg",
+  danger: "border-danger-fg/25 bg-danger-bg text-danger-fg",
 } as const;
 
 export default function Notice({
@@ -21,7 +21,7 @@ export default function Notice({
   return (
     <div
       role="status"
-      className={`rounded-lg border px-4 py-3 text-sm ${TONES[tone]} ${className ?? ""}`}
+      className={`rounded-control border px-4 py-3 text-sm ${TONES[tone]} ${className ?? ""}`}
     >
       {children}
     </div>

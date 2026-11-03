@@ -36,8 +36,9 @@ function titleForPath(pathname: string): string {
 }
 
 /**
- * Administrator console chrome: fixed maroon sidebar (≥1024px), slim top bar
- * with the current page and the user menu, off-canvas drawer below 1024px.
+ * Administrator console chrome: fixed maroon sidebar (≥ md / 768px, same
+ * first-class bedside-tablet breakpoint as the clinical shell), slim top bar
+ * with the current page and the user menu, off-canvas drawer below it.
  * Navigation scrolls to top and moves focus to <main>; page routes add their
  * own Suspense/error boundary in App.
  */
@@ -131,8 +132,8 @@ export default function AdminLayout() {
       </a>
 
       {/* Fixed sidebar (desktop) — the spacer div reserves the layout width. */}
-      <div className="hidden w-64 shrink-0 lg:block" aria-hidden="true" />
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col overflow-y-auto bg-theme-maroon px-4 py-6 lg:flex">
+      <div className="hidden w-64 shrink-0 md:block" aria-hidden="true" />
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col overflow-y-auto bg-theme-maroon px-4 py-6 md:flex">
         <SidebarContent
           organization={organization}
           onSignOut={() => void handleSignOut()}
@@ -141,10 +142,10 @@ export default function AdminLayout() {
         />
       </aside>
 
-      {/* Off-canvas drawer (mobile < 1024px) with backdrop. */}
+      {/* Off-canvas drawer (mobile < md) with backdrop. */}
       {drawerOpen ? (
         <div
-          className="fixed inset-0 z-40 bg-theme-ink/50 backdrop-blur-[2px] lg:hidden"
+          className="fixed inset-0 z-40 bg-theme-ink/50 backdrop-blur-[2px] md:hidden"
           aria-hidden="true"
           onClick={() => setDrawerOpen(false)}
         />
@@ -154,7 +155,7 @@ export default function AdminLayout() {
         role="dialog"
         aria-modal="true"
         aria-label="Console menu"
-        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[86vw] flex-col overflow-y-auto bg-theme-maroon px-4 py-6 shadow-card transition-transform duration-200 lg:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[86vw] flex-col overflow-y-auto bg-theme-maroon px-4 py-6 shadow-card transition-transform duration-200 md:hidden ${
           drawerOpen ? "visible flex translate-x-0" : "invisible -translate-x-full"
         }`}
       >
@@ -328,7 +329,7 @@ function AdminTopBar({
             onClick={onOpenMenu}
             aria-label="Open console menu"
             aria-expanded="false"
-            className="rounded-control border border-theme-line bg-white p-2 text-theme-ink transition-colors hover:bg-theme-light-gray lg:hidden"
+            className="rounded-control border border-theme-line bg-white p-2 text-theme-ink transition-colors hover:bg-theme-light-gray md:hidden"
           >
             <MsIcon name="menu" className="text-[20px]" optical={20} />
           </button>

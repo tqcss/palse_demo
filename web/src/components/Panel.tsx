@@ -20,7 +20,7 @@ export default function Panel({
 }) {
   return (
     <section
-      className={`flex flex-col gap-5 rounded-xl border border-theme-line bg-white p-6 shadow-sm md:p-7 ${className ?? ""}`}
+      className={`flex flex-col gap-5 rounded-card border border-theme-line bg-white p-6 shadow-card md:p-7 ${className ?? ""}`}
     >
       {title || kicker || subtitle ? (
         <div className="flex flex-col gap-1.5">
