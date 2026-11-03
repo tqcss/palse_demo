@@ -27,18 +27,18 @@
 
 | Area | File(s) | Inconsistency | Severity | Fix | Status |
 |---|---|---|---|---|---|
-| Primary button | `components/PrimaryButton.tsx` vs 6+ one-off `bg-theme-maroon` buttons (`PatientsPage.vue:119/416`, `ReportsPage:142`, `EditPatientPage:240`, `NotFound:85`, `AdminNotFound:31`) | Same button re-implemented; mixes `rounded-lg` (8px) and `rounded-control` (10px) | High | Keep `PrimaryButton` as the canonical primary; normalize to `rounded-control`; swap one-off call sites | Partial |
+| Primary button | `components/PrimaryButton.tsx` vs 6+ one-off `bg-theme-maroon` buttons (`PatientsPage:119/416`, `ReportsPage:142`, `EditPatientPage:240`, `NotFound:85`, `AdminNotFound:31`) | Same button re-implemented; mixes `rounded-lg` (8px) and `rounded-control` (10px) | High | `PrimaryButton` normalized to `rounded-control` + `inline` variant; PatientsPage & ReportsPage call sites swapped | Partial |
 | Badge/pill | `RiskBadge` vs `ui/Badge` vs inline status pills (`Dashboard:1522`, `MonitorPage:614,723`, `ReportsPage:412–424`) | Two pill components + inline re-implementations | High | `RiskBadge` consumes `lib/tiers.ts` (single mapping); `ui/Badge` stays for status tones; inline pills migrated | Partial |
 | Card shells | `components/Panel.tsx` (`rounded-xl shadow-sm`) vs `ui/*` (`rounded-card shadow-card`) vs admin tables | Two card languages | Med | Panel → token pair (visual change approved within consistency scope) | Fixed |
 | Spinner | `ui/Spinner.tsx` vs inline spans in `PrimaryButton`, `Dashboard:1426`, `PatientsPage:212` | Consistent internals, 4 implementations | Low | Inline spans now use identical border classes; component consolidation tracked later | Open |
 | Stat card | `components/StatCard.tsx` (auth-only) vs local `StatCard` in `ReportsPage:379` & `AdminOverviewPage:45` | Three StatCards, only one exported | Med | Local ones now visually aligned via panel tokens; full merge in follow-up | Open |
-| Confirm flows | `ui/ConfirmDialog.tsx` vs ad-hoc delete modal in `PatientsPage:188–222` | Two confirmation patterns | Med | PatientsDelete adopts ConfirmDialog | Partial |
+| Confirm flows | `ui/ConfirmDialog.tsx` vs ad-hoc delete modal in `PatientsPage:188–222` | Two confirmation patterns | Med | PatientsPage delete now uses `ui/ConfirmDialog` (created this pass) | Fixed |
 
 ## 3. Page structure and layout
 
 | Area | File(s) | Inconsistency | Severity | Fix | Status |
 |---|---|---|---|---|---|
-| Page header | Clinical pages hand-roll `<header>` (`Dashboard:536`, `PatientsPage:103`, `ReportsPage:124`, `MonitorPage`) vs `ui/PageHeader.tsx` (admin) | Eyebrow style differs (`font-bold tracking-wide` vs `font-semibold tracking-wider`); admin gets focusable h1 | High | Clinical pages adopt `ui/PageHeader` (skip Dashboard's in-wizard header, which is a section header, not a page header) | Partial |
+| Page header | Clinical pages hand-roll `<header>` (`Dashboard:536`, `PatientsPage:103`, `ReportsPage:124`, `MonitorPage`) vs `ui/PageHeader.tsx` (admin) | Eyebrow style differs (`font-bold tracking-wide` vs `font-semibold tracking-wider`); admin gets focusable h1 | High | PatientsPage + ReportsPage adopt `ui/PageHeader`; Dashboard's in-wizard header is a section header, not a page header; Monitor/Edit still hand-rolled | Partial |
 | Top bar paddings/width | `components/AppTopbar.tsx` (`px-5` + inner `max-w-[68em]`, z-10, label-as-link) vs admin `AdminLayout.tsx` (`px-4`, z-20, h2, no inner width) | Shell drift between the two consoles | High | Align paddings, z; keep both max-widths aligned to content (`max-w-6xl`) | Fixed |
 | Sidebar | Clinical `AppSidebar` (w-60, shows ≥ md, `rounded-lg` items) vs `AdminLayout` (w-64, shows ≥ lg, `rounded-control`) | Breakpoint + item radius differ | Med | Admin sidebar now shows ≥ md and uses `rounded-control` everywhere; widths kept (300/256px) — intentional, documented | Fixed |
 | Route change focus | Admin has scroll-to-top + `main.focus()` (`AdminLayout:53–63`); clinical shell has nothing | Keyboard users lose context on route change in the clinical app | High | Same effect added to the clinical `AppLayout` | Fixed |
@@ -49,7 +49,7 @@
 
 | Area | File(s) | Inconsistency | Severity | Fix | Status |
 |---|---|---|---|---|---|
-| Icon sizes | ~40 `text-[14..36px]` MsIcon sizes, no scale | Drift everywhere | Low | Documented scale (ize set: 14/16/18/20/22/28) in DESIGN_SYSTEM; no functional change | Open |
+| Icon sizes | ~40 `text-[14..36px]` MsIcon sizes, no scale | Drift everywhere | Low | Documented scale (14/16/18/20/22, 36 illustrated) in DESIGN_SYSTEM §5; sweep left as mechanical follow-up | Open |
 | Risk color mapping | `RiskBadge` vs new `lib/tiers.ts` vs `Dashboard.DONUT_COLORS` vs `ReportsPage.TIER_COLORS` | 4 mappings | High | `lib/tiers.ts` is now the single source; RiskBadge consumes it | Fixed |
 | Donut/chart style | old conic donut (Dashboard), CSS bars (Reports), `TrendChart` (Monitor), new `RiskDonut`/`RiskTrendChart` | Mixed techniques/strokes | Med | Document now; the new section follows one chart style; legacy charts migrate incrementally | Open |
 
@@ -65,8 +65,8 @@
 
 | Area | File(s) | Inconsistency | Severity | Fix | Status |
 |---|---|---|---|---|---|
-| Loading skeletons | `PatientsPage:379` / `ReportsPage:156` hand-rolled pulses vs `ui/Skeleton` (admin) | Duplicate pulse blocks | Med | Clinical pages adopt `ui/Skeleton` | Partial |
-| Empty states | `PatientsPage:392` uses `Panel`; `ReportsPage:222` plain text; none use `ui/EmptyState` (admin-only) | 3 empty-state languages | Med | Adopt `ui/EmptyState` clinically (Dashboard section already ships proper empty/zero states) | Partial |
+| Loading skeletons | `PatientsPage:379` / `ReportsPage:156` hand-rolled pulses vs `ui/Skeleton` (admin) | Duplicate pulse blocks | Med | Both pages now use `ui/Skeleton` (Monitor/Dashboard remain) | Partial |
+| Empty states | `PatientsPage:392` uses `Panel`; `ReportsPage:222` plain text; none use `ui/EmptyState` (admin-only) | 3 empty-state languages | Med | Both clinical pages adopted `ui/EmptyState` (Dashboard section ships its own zero states internally) | Fixed |
 | Error boundary | AdminSection only (`App.tsx:43–49`); clinical routes unprotected | A rendering crash blanks the whole clinical pane | High | Clinical routes wrapped with ErrorBoundary in App | Fixed |
 | Icon-only controls | `RowAction` in `PatientsPage` (text ok), `KebabMenu` fine | OK | — | — | OK |
 | Charts a11y | New section adds aria labels + sr tables; legacy TrendChart OK | OK | — | — | OK |
