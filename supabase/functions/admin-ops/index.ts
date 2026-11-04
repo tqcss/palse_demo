@@ -8,11 +8,11 @@
 //   * caller must hold an active admin profile with an organization.
 //
 // Actions:
-//   create_clinician    { first_name, last_name, email, temp_password, department?, job_title? }
+//   create_clinician    { first_name, last_name, email, temp_password, prc_number, department?, job_title? }
 //   reset_temp_password { temp_password, clinician_id? | reset_request_id? }
 //   disable_member      { clinician_id }
 //   enable_member       { clinician_id }
-//   update_member       { member_id, first_name, last_name, department?, job_title? }
+//   update_member       { member_id, first_name, last_name, prc_number, department?, job_title? }
 //   resolve_reset_request { reset_request_id }  — dismiss without a password
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -46,6 +46,36 @@ function emailProblems(email: unknown): string | null {
     return "Enter a valid email address.";
   }
   return null;
+}
+
+/** PRC license number (clinician sign-in identity) — 6-9 digits, required. */
+function prcProblems(value: unknown): string | null {
+  if (value == null || typeof value !== "string" || value.trim() === "") {
+    return "PRC number is required — clinicians sign in with it.";
+  }
+  if (!/^[0-9]{6,9}$/.test(value.trim())) {
+    return "PRC numbers are 6-9 digits.";
+  }
+  return null;
+}
+
+/** True when another account already holds this PRC number. */
+async function prcTaken(
+  service: SupabaseClient,
+  prc: string,
+  exceptId?: string,
+): Promise<boolean> {
+  let query = service
+    .from("profiles")
+    .select("id")
+    .eq("prc_number", prc)
+    .limit(1);
+  if (exceptId != null) {
+    query = query.neq("id", exceptId);
+  }
+  const { data, error } = await query;
+  if (error != null) return false; // surfaced by the unique index at write time
+  return (data ?? []).length > 0;
 }
 
 function nameOrTitleProblems(value: unknown, label: string, max = 100): string | null {
@@ -144,6 +174,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           nameOrTitleProblems(body.first_name, "First name"),
           nameOrTitleProblems(body.last_name, "Last name"),
           emailProblems(body.email),
+          prcProblems(body.prc_number),
           tempPasswordProblems(body.temp_password),
         ]) {
           if (check != null) return json({ error: check }, 400);
@@ -165,6 +196,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
           return json({ error: message }, 400);
         }
 
+        if (await prcTaken(service, String(body.prc_number).trim())) {
+          return json({ error: "An account with this PRC number already exists." }, 400);
+        }
+
+        // Pre-validate the PRC against the profile-table unique index BEFORE
+        // creating the auth user — otherwise an index rejection would leave a
+        // half-provisioned account.
         const { error: profileError } = await service
           .from("profiles")
           .update({
@@ -174,6 +212,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
             status: "active",
             org_id: caller.org_id,
             must_set_password: true,
+            prc_number: String(body.prc_number).trim(),
             department: typeof body.department === "string" && body.department.trim() !== ""
               ? body.department.trim()
               : null,
@@ -317,6 +356,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         for (const check of [
           nameOrTitleProblems(body.first_name, "First name"),
           nameOrTitleProblems(body.last_name, "Last name"),
+          prcProblems(body.prc_number),
         ]) {
           if (check != null) return json({ error: check }, 400);
         }
@@ -343,11 +383,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
           return json({ error: "This member is outside your organization." }, 403);
         }
 
+        const nextPrc = String(body.prc_number).trim();
+        if (await prcTaken(service, nextPrc, memberId)) {
+          return json({ error: "An account with this PRC number already exists." }, 400);
+        }
+
         const { error: updateError } = await service
           .from("profiles")
           .update({
             first_name: String(body.first_name).trim(),
             last_name: String(body.last_name).trim(),
+            prc_number: nextPrc,
             department: optionalText(body.department),
             job_title: optionalText(body.job_title),
           })

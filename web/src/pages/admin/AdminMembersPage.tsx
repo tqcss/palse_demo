@@ -22,7 +22,7 @@ import { useToast } from "../../components/ui/toast.tsx";
 import { useAuth } from "../../context/useAuth.ts";
 import { useAdminPageTitle } from "../../hooks/useAdminPageTitle.ts";
 import { guide } from "../../lib/authErrors.ts";
-import { isEmailFormat } from "../../lib/validation.ts";
+import { isEmailFormat, isPrcFormat } from "../../lib/validation.ts";
 import {
   type CreateClinicianInput,
   type OrgMember,
@@ -299,6 +299,7 @@ export default function AdminMembersPage() {
       lastName: string;
       department: string;
       jobTitle: string;
+      prcNumber: string;
     },
   ): Promise<boolean> {
     if (busyId != null) return false;
@@ -310,6 +311,7 @@ export default function AdminMembersPage() {
         department:
           patch.department.trim() === "" ? null : patch.department.trim(),
         jobTitle: patch.jobTitle.trim() === "" ? null : patch.jobTitle.trim(),
+        prcNumber: patch.prcNumber.trim() === "" ? null : patch.prcNumber.trim(),
       });
       await reload();
       toast.push("success", "Member details saved.");
@@ -689,6 +691,11 @@ export default function AdminMembersPage() {
                             {memberName(member)}
                           </div>
                           <div className="truncate text-xs text-theme-gray">
+                            {member.prc_number != null
+                              ? `PRC ${member.prc_number}`
+                              : "No PRC on record"}
+                          </div>
+                          <div className="truncate text-xs text-theme-gray">
                             {member.email}
                           </div>
                         </div>
@@ -969,6 +976,7 @@ function CreateClinicianModal({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [prcNumber, setPrcNumber] = useState("");
   const [department, setDepartment] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [tempPassword, setTempPassword] = useState(() =>
@@ -983,6 +991,7 @@ function CreateClinicianModal({
     firstName.trim() !== "" ||
     lastName.trim() !== "" ||
     email.trim() !== "" ||
+    prcNumber.trim() !== "" ||
     department.trim() !== "" ||
     jobTitle.trim() !== "";
 
@@ -1017,6 +1026,12 @@ function CreateClinicianModal({
         : !isEmailFormat(email.trim())
           ? "Enter a valid email address."
           : null,
+    prc:
+      prcNumber.trim().length === 0
+        ? "Enter the clinician's PRC number — it is their sign-in identity."
+        : !isPrcFormat(prcNumber)
+          ? "PRC numbers are 6-9 digits."
+          : null,
   };
 
   function valid(): boolean {
@@ -1044,6 +1059,7 @@ function CreateClinicianModal({
               firstName: firstName.trim(),
               lastName: lastName.trim(),
               email: email.trim(),
+              prcNumber: prcNumber.trim(),
               department: department.trim() === "" ? null : department.trim(),
               jobTitle: jobTitle.trim() === "" ? null : jobTitle.trim(),
               tempPassword,
@@ -1083,12 +1099,27 @@ function CreateClinicianModal({
           id="clinician-email"
           label="Email address"
           required
-          hint="Used to sign in."
+          hint="Account contact — password-reset requests are matched to this address."
           type="email"
           autoComplete="off"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           error={fieldErrors.email}
+          disabled={pending}
+        />
+        <FormInput
+          id="clinician-prc"
+          label="PRC number"
+          required
+          hint="6-9 digits — the clinician signs in with this number + password."
+          inputMode="numeric"
+          placeholder="e.g. 0102034"
+          autoComplete="off"
+          value={prcNumber}
+          onChange={(event) =>
+            setPrcNumber(event.target.value.replace(/[^0-9]/g, ""))
+          }
+          error={fieldErrors.prc}
           disabled={pending}
         />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1214,17 +1245,24 @@ function EditDetailsModal({
     lastName: string;
     department: string;
     jobTitle: string;
+    prcNumber: string;
   }) => Promise<void>;
 }) {
   const [firstName, setFirstName] = useState(member.first_name);
   const [lastName, setLastName] = useState(member.last_name);
   const [department, setDepartment] = useState(member.department ?? "");
   const [jobTitle, setJobTitle] = useState(member.job_title ?? "");
+  const [prcNumber, setPrcNumber] = useState(member.prc_number ?? "");
   const [error, setError] = useState<string | null>(null);
 
   const fieldErrors = {
     firstName: firstName.trim().length === 0 ? "Enter a first name." : null,
     lastName: lastName.trim().length === 0 ? "Enter a last name." : null,
+    prc: prcNumber.trim().length === 0
+      ? "Enter the member's PRC number — it is their sign-in identity."
+      : !isPrcFormat(prcNumber)
+        ? "PRC numbers are 6-9 digits."
+        : null,
   };
 
   return (
@@ -1237,7 +1275,13 @@ function EditDetailsModal({
           if (pending || Object.values(fieldErrors).some(Boolean)) return;
           setError(null);
           try {
-            await onSubmit({ firstName, lastName, department, jobTitle });
+            await onSubmit({
+              firstName,
+              lastName,
+              department,
+              jobTitle,
+              prcNumber: prcNumber.trim(),
+            });
           } catch (caught) {
             console.error("[palse edit details]", caught);
             setError(guide(caught, "Could not save the details."));
@@ -1265,6 +1309,19 @@ function EditDetailsModal({
           />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormInput
+            id="edit-prc"
+            label="PRC number"
+            required
+            hint="Required for the member to sign in — shown in the sign-in lookup."
+            inputMode="numeric"
+            value={prcNumber}
+            onChange={(event) =>
+              setPrcNumber(event.target.value.replace(/[^0-9]/g, ""))
+            }
+            error={fieldErrors.prc}
+            disabled={pending}
+          />
           <FormInput
             id="edit-department"
             label="Department (optional)"

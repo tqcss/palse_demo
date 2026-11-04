@@ -11,16 +11,16 @@ import TurnstileWidget from "../components/TurnstileWidget.tsx";
 import { isCaptchaEnabled } from "../lib/captcha.ts";
 import { useAuth } from "../context/useAuth";
 import { guide } from "../lib/authErrors.ts";
-import { isEmailFormat } from "../lib/validation.ts";
+import { isPrcFormat } from "../lib/validation.ts";
 import { supabase } from "../lib/supabase.ts";
 
 interface Errors {
-  email: string | null;
+  prc: string | null;
   password: string | null;
   form: string | null;
 }
 
-const blankErrors: Errors = { email: null, password: null, form: null };
+const blankErrors: Errors = { prc: null, password: null, form: null };
 
 export default function Signin() {
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ export default function Signin() {
   const [searchParams] = useSearchParams();
   const { loading } = useAuth();
 
-  const [email, setEmail] = useState("");
+  const [prc, setPrc] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -41,16 +41,16 @@ export default function Signin() {
 
   function validate(): boolean {
     const next: Errors = {
-      email: email.trim().length === 0
-        ? "Enter your email address."
-        : !isEmailFormat(email.trim())
-          ? "Enter a valid email address."
+      prc: prc.trim().length === 0
+        ? "Enter your PRC number."
+        : !isPrcFormat(prc)
+          ? "PRC numbers are 6-9 digits — enter them without separators."
           : null,
       password: password.length === 0 ? "Enter your password." : null,
       form: null,
     };
     setErrors(next);
-    return next.email === null && next.password === null;
+    return next.prc === null && next.password === null;
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -59,18 +59,38 @@ export default function Signin() {
 
     setPending(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-        options: { captchaToken: captchaToken ?? undefined },
-      });
+      // The PRC number is the sign-in identity: an exact-match RPC resolves
+      // it to the account email, then the password check proceeds normally.
+      // All misses (unknown PRC, inactive/pending account, no PRC on record)
+      // resolve to the same message — no existence oracles.
+      const { data: resolvedEmail, error: lookupError } =
+        await supabase.rpc("sign_in_email_for_prc", { p_prc: prc.trim() });
+      if (lookupError != null) throw lookupError;
 
-      if (error != null) {
-        setErrors({ ...blankErrors, form: guide(error) });
+      const signInEmail =
+        typeof resolvedEmail === "string" && resolvedEmail.trim() !== ""
+          ? resolvedEmail.trim()
+          : null;
+
+      if (signInEmail != null) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: signInEmail,
+          password,
+          options: { captchaToken: captchaToken ?? undefined },
+        });
+        if (error != null) {
+          setErrors({ ...blankErrors, form: guide(error) });
+          return;
+        }
+        await navigate(destination, { replace: true });
         return;
       }
 
-      await navigate(destination, { replace: true });
+      setErrors({
+        ...blankErrors,
+        form:
+          "No active clinician account matches this PRC number — check it, or ask your administrator.",
+      });
     } catch (cause) {
       console.error("[palse signin]", cause);
       setErrors({ ...blankErrors, form: "Sign-in failed. Please try again." });
@@ -86,7 +106,8 @@ export default function Signin() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Welcome back</h1>
         <p className="mt-2 text-sm text-theme-gray">
-          Sign in to access the clinical dashboard.
+          Sign in with your PRC number and password to access the clinical
+          dashboard.
         </p>
       </div>
 
@@ -100,15 +121,19 @@ export default function Signin() {
         {errors.form ? <Notice tone="danger">{errors.form}</Notice> : null}
 
         <FormInput
-          id="email"
-          label="Email address"
-          type="email"
-          name="email"
-          autoComplete="email"
-          placeholder="you@hospital.org"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          error={errors.email}
+          id="prc"
+          label="PRC number"
+          hint="Your license number from the PRC — the one your administrator registered."
+          type="text"
+          name="username"
+          autoComplete="username"
+          inputMode="numeric"
+          placeholder="e.g. 0102034"
+          value={prc}
+          onChange={(event) =>
+            setPrc(event.target.value.replace(/[^0-9]/g, ""))
+          }
+          error={errors.prc}
           disabled={pending}
           autoFocus
         />
