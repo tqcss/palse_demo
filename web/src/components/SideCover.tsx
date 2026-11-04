@@ -3,7 +3,7 @@ import StatCard from "../components/StatCard.tsx";
 
 export default function SideHero() {
   return (
-    <div className="flex-1 bg-theme-maroon text-theme-white">
+    <div className="flex-1 bg-theme-maroon text-theme-white bg-[url('/images/signup-bg-red.png')]">
       <div className="flex relative flex-col justify-between h-full px-10 pt-8 pb-16 overflow-clip">
         <div
           className="bg-transparent absolute h-400 w-400 bottom--2 right--2"
@@ -14,11 +14,11 @@ export default function SideHero() {
           }}
         />
         <img
-          className="absolute bottom-80 right-[-8em] h-100 z-20 rotate-[-18deg]"
+          className="absolute bottom-75 right-[-8em] h-100 z-20 rotate-[-18deg]"
           src="/images/rob1.png"
         />
         <BrandMastHead compact={false} />
-        <div className="flex flex-col bg-theme-white/5 px-12 pt-12 pb-8 rounded-xl gap-6 z-10">
+        <div className="flex flex-col px-12 pt-12 pb-8 rounded-xl gap-6 z-10">
           <h1 className="text-6xl font-bold">
             Early-Onset Neonatal Sepsis Prediction
           </h1>

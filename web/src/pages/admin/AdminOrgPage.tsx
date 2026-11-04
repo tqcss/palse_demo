@@ -25,7 +25,13 @@ import {
 } from "../../lib/admin.ts";
 
 /** Small key/value row for the hospital record grid. */
-function Record({ label, children }: { label: string; children: React.ReactNode }) {
+function Record({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col gap-1 border-b border-theme-line/70 py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
       <span className="text-sm font-medium text-theme-gray">{label}</span>
@@ -69,7 +75,9 @@ export default function AdminOrgPage() {
       setPatientCount(patients);
     } catch (cause) {
       console.error("[palse admin org]", cause);
-      setLoadError(guide(cause, "Could not load your organization. Try again."));
+      setLoadError(
+        guide(cause, "Could not load your organization. Try again."),
+      );
     }
   }, [orgId]);
 
@@ -83,7 +91,10 @@ export default function AdminOrgPage() {
     // One frame after paint so the card is on screen before the browser's
     // native anchor behavior can snap to a not-yet-mounted position.
     const timer = window.setTimeout(() => {
-      inviteCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      inviteCardRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
     }, 50);
     return () => window.clearTimeout(timer);
   }, [location.hash]);
@@ -107,7 +118,9 @@ export default function AdminOrgPage() {
       );
     } catch (cause) {
       console.error("[palse rotate invite]", cause);
-      setRotateError(guide(cause, "Could not rotate the invite code. Try again."));
+      setRotateError(
+        guide(cause, "Could not rotate the invite code. Try again."),
+      );
     } finally {
       setRotating(false);
     }
@@ -128,7 +141,10 @@ export default function AdminOrgPage() {
       {rotateError ? <Notice tone="danger">{rotateError}</Notice> : null}
 
       {/* Hospital record ------------------------------------------------------ */}
-      <Panel title="Hospital record" subtitle="Read-only registry data for your organization.">
+      <Panel
+        title="Hospital record"
+        subtitle="Read-only registry data for your organization."
+      >
         {loading ? (
           <div className="flex flex-col gap-3" aria-hidden="true">
             {Array.from({ length: 5 }, (_, index) => (
@@ -151,11 +167,15 @@ export default function AdminOrgPage() {
             </Record>
             <Record label="Members">
               {memberCount == null ? "—" : memberCount}{" "}
-              <span className="text-xs text-theme-gray">administrators and clinicians</span>
+              <span className="text-xs text-theme-gray">
+                administrators and clinicians
+              </span>
             </Record>
             <Record label="Patients">
               {patientCount == null ? "—" : patientCount}{" "}
-              <span className="text-xs text-theme-gray">in the clinical registry</span>
+              <span className="text-xs text-theme-gray">
+                in the clinical registry
+              </span>
             </Record>
             <Record label="Organization ID">
               <span className="inline-flex min-w-0 flex-wrap items-center gap-2">
@@ -178,7 +198,9 @@ export default function AdminOrgPage() {
           {loading ? (
             <Skeleton className="h-24 w-full" />
           ) : organization == null ? (
-            <Notice tone="warning">Invite code is unavailable without an organization.</Notice>
+            <Notice tone="warning">
+              Invite code is unavailable without an organization.
+            </Notice>
           ) : (
             <>
               <div className="flex flex-col items-start gap-4 rounded-control border border-theme-line bg-theme-light-gray px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -187,7 +209,9 @@ export default function AdminOrgPage() {
                     Current code
                   </div>
                   <code
-                    aria-label={codeRevealed ? "Invite code" : "Invite code (hidden)"}
+                    aria-label={
+                      codeRevealed ? "Invite code" : "Invite code (hidden)"
+                    }
                     className="mt-1 block font-mono text-lg font-bold tracking-[0.3em] text-theme-ink"
                   >
                     {codeRevealed ? code : "•".repeat(Math.max(6, code.length))}
@@ -227,17 +251,25 @@ export default function AdminOrgPage() {
                     pending={rotating}
                     onClick={() => setRotateOpen(true)}
                   >
-                    <MsIcon name="autorenew" className="text-[16px]" optical={16} />
+                    <MsIcon
+                      name="autorenew"
+                      className="text-[16px]"
+                      optical={16}
+                    />
                     Rotate code
                   </PrimaryButton>
                 </div>
               </div>
               <p className="mt-3 flex items-start gap-2 text-xs text-theme-ink-soft">
-                <MsIcon name="info" className="mt-0.5 shrink-0 text-[15px] text-theme-gray" optical={14} />
-                Only share the code through your hospital&apos;s channels — anyone
-                holding it can register as an administrator here. Rotating
-                stops the previous code immediately; accounts that already
-                joined are unaffected.
+                <MsIcon
+                  name="info"
+                  className="mt-0.5 shrink-0 text-[15px] text-theme-gray"
+                  optical={14}
+                />
+                Only share the code through your hospital&apos;s channels —
+                anyone holding it can register as an administrator here.
+                Rotating stops the previous code immediately; accounts that
+                already joined are unaffected.
               </p>
             </>
           )}
@@ -253,7 +285,9 @@ export default function AdminOrgPage() {
           <MsIcon name="shield" className="text-[20px]" optical={20} />
         </span>
         <div className="min-w-0">
-          <h2 className="text-sm font-bold text-theme-ink">Isolated by design</h2>
+          <h2 className="text-sm font-bold text-theme-ink">
+            Isolated by design
+          </h2>
           <p className="mt-1 max-w-2xl text-sm leading-relaxed text-theme-ink-soft">
             Every query in this console and the clinical app is scoped through
             row-level security at the database: your organization&apos;s
@@ -274,7 +308,9 @@ export default function AdminOrgPage() {
       >
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-control border border-risk-high-fg/25 bg-risk-high-bg/50 px-4 py-3.5">
           <div>
-            <p className="text-sm font-semibold text-risk-high-fg">Delete this organization</p>
+            <p className="text-sm font-semibold text-risk-high-fg">
+              Delete this organization
+            </p>
             <p className="text-xs text-theme-ink-soft">
               Removes all patients, assessments and members. Irreversible.
             </p>

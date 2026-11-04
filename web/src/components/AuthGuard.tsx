@@ -10,7 +10,7 @@ import { useAuth } from "../context/useAuth";
 /** Full-page spinner shown until the initial auth state resolves. */
 export function AuthSplash() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-theme-maroon">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-theme-maroon bg-[url('images/signup-bg-red.png')]">
       <BrandMastHead />
       <span
         aria-label="Loading"
@@ -53,13 +53,23 @@ export function BlockedScreen({
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-theme-maroon px-6 text-center">
       <BrandMastHead />
       <div className="mt-2 flex h-14 w-14 items-center justify-center rounded-full bg-theme-white/10">
-        <MsIcon name={icon} className="text-[28px] text-theme-white" optical={28} />
+        <MsIcon
+          name={icon}
+          className="text-[28px] text-theme-white"
+          optical={28}
+        />
       </div>
       <div className="max-w-md">
         <h1 className="text-xl font-bold text-theme-white">{title}</h1>
-        <p className="mt-2 text-sm leading-relaxed text-theme-white/70">{message}</p>
+        <p className="mt-2 text-sm leading-relaxed text-theme-white/70">
+          {message}
+        </p>
       </div>
-      {children ? <div className="flex flex-wrap items-center justify-center gap-3">{children}</div> : null}
+      {children ? (
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          {children}
+        </div>
+      ) : null}
       <div className="mt-4">
         <button
           type="button"
@@ -211,7 +221,11 @@ export function AwaitingApproval() {
       title="Confirmed — now awaiting approval"
       message="Your email is verified and the superadmins have been asked to confirm this administrator account. This usually takes little time; once confirmed, you'll set up or join your hospital's organization. You can re-check below."
     >
-      <PrimaryButton pending={rechecking} onClick={() => void handleRecheck()} type="button">
+      <PrimaryButton
+        pending={rechecking}
+        onClick={() => void handleRecheck()}
+        type="button"
+      >
         Re-check approval status
       </PrimaryButton>
       {/* No extra sign-out button here: BlockedScreen already renders one. */}
@@ -231,14 +245,20 @@ export function NoAccess() {
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-theme-maroon px-6 py-16 text-center">
       <BrandMastHead />
       <div className="mt-2 flex h-14 w-14 items-center justify-center rounded-full bg-theme-white/10">
-        <MsIcon name="lock" className="text-[28px] text-theme-white" optical={28} />
+        <MsIcon
+          name="lock"
+          className="text-[28px] text-theme-white"
+          optical={28}
+        />
       </div>
       <div className="max-w-md">
-        <h1 className="text-xl font-bold text-theme-white">You don&apos;t have access</h1>
+        <h1 className="text-xl font-bold text-theme-white">
+          You don&apos;t have access
+        </h1>
         <p className="mt-2 text-sm leading-relaxed text-theme-white/70">
           The administration console is only available to approved
-          administrators of an organization. Your account is a clinician
-          account — continue in the clinical app.
+          administrators of an organization. Your account is a clinician account
+          — continue in the clinical app.
         </p>
       </div>
       <Link
@@ -253,7 +273,13 @@ export function NoAccess() {
 }
 
 /** Restricts children to guests; sends already-signed-in users to their home. */
-export function GuestOnly({ children, home = "/dashboard" }: { children: ReactNode; home?: string }) {
+export function GuestOnly({
+  children,
+  home = "/dashboard",
+}: {
+  children: ReactNode;
+  home?: string;
+}) {
   const { session, loading, profile, profileLoading } = useAuth();
 
   if (loading || profileLoading) return <AuthSplash />;
@@ -262,7 +288,10 @@ export function GuestOnly({ children, home = "/dashboard" }: { children: ReactNo
     if (profile?.role === "admin" && profile.status === "pending") {
       return <AwaitingApproval />;
     }
-    const target = profile?.role === "admin" && profile.status === "active" ? "/admin" : home;
+    const target =
+      profile?.role === "admin" && profile.status === "active"
+        ? "/admin"
+        : home;
     return <Navigate replace to={target} />;
   }
   return children;

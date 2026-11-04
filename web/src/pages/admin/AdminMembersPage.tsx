@@ -311,7 +311,8 @@ export default function AdminMembersPage() {
         department:
           patch.department.trim() === "" ? null : patch.department.trim(),
         jobTitle: patch.jobTitle.trim() === "" ? null : patch.jobTitle.trim(),
-        prcNumber: patch.prcNumber.trim() === "" ? null : patch.prcNumber.trim(),
+        prcNumber:
+          patch.prcNumber.trim() === "" ? null : patch.prcNumber.trim(),
       });
       await reload();
       toast.push("success", "Member details saved.");
@@ -663,7 +664,7 @@ export default function AdminMembersPage() {
                   />
                   <th className="pb-2 pr-4 font-semibold">Role</th>
                   <th className="pb-2 pr-4 font-semibold">Status</th>
-                  <th className="pb-2 pr-4 font-semibold">Job title</th>
+                  <th className="pb-2 pr-4 font-semibold">Department</th>
                   <SortableTh
                     label="Joined"
                     column="created"
@@ -685,6 +686,7 @@ export default function AdminMembersPage() {
                           first={member.first_name}
                           last={member.last_name}
                           size="sm"
+                          src={member?.avatar_url ?? null}
                         />
                         <div className="min-w-0">
                           <div className="truncate font-semibold text-theme-ink">
@@ -1258,11 +1260,12 @@ function EditDetailsModal({
   const fieldErrors = {
     firstName: firstName.trim().length === 0 ? "Enter a first name." : null,
     lastName: lastName.trim().length === 0 ? "Enter a last name." : null,
-    prc: prcNumber.trim().length === 0
-      ? "Enter the member's PRC number — it is their sign-in identity."
-      : !isPrcFormat(prcNumber)
-        ? "PRC numbers are 6-9 digits."
-        : null,
+    prc:
+      prcNumber.trim().length === 0
+        ? "Enter the member's PRC number — it is their sign-in identity."
+        : !isPrcFormat(prcNumber)
+          ? "PRC numbers are 6-9 digits."
+          : null,
   };
 
   return (

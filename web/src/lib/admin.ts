@@ -25,6 +25,7 @@ export interface OrgMember {
   prc_number: string | null;
   created_at: string;
   updated_at: string;
+  avatar_url: string;
 }
 
 export interface Organization {
@@ -54,7 +55,13 @@ export interface AuditLogEntry {
   actor_id: string | null;
   actor_email: string | null;
   action: string;
-  entity: "patient" | "assessment" | "vitals" | "account" | "organization" | "password_reset";
+  entity:
+  | "patient"
+  | "assessment"
+  | "vitals"
+  | "account"
+  | "organization"
+  | "password_reset";
   entity_id: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
@@ -82,7 +89,10 @@ function auditQuery(filter: AuditLogFilter, withCount: boolean) {
     .from("audit_logs")
     .select("*", withCount ? { count: "exact" } : undefined)
     .order("created_at", { ascending: false })
-    .range(filter.offset ?? 0, (filter.offset ?? 0) + (filter.limit ?? 100) - 1);
+    .range(
+      filter.offset ?? 0,
+      (filter.offset ?? 0) + (filter.limit ?? 100) - 1,
+    );
 
   if (filter.entity != null) query = query.eq("entity", filter.entity);
   if (filter.action != null && filter.action.trim() !== "") {
@@ -98,7 +108,12 @@ function auditQuery(filter: AuditLogFilter, withCount: boolean) {
 
 /* --------------------------- Temporary password --------------------------- */
 
-const TEMP_ALPHABETS = ["abcdefghijkmnpqrstuvwxyz", "ABCDEFGHJKLMNPQRSTUVWXYZ", "23456789", "!@#$%^&*"];
+const TEMP_ALPHABETS = [
+  "abcdefghijkmnpqrstuvwxyz",
+  "ABCDEFGHJKLMNPQRSTUVWXYZ",
+  "23456789",
+  "!@#$%^&*",
+];
 
 export function generateTempPassword(length = 14): string {
   const pick = (alphabet: string): string => {
@@ -109,10 +124,15 @@ export function generateTempPassword(length = 14): string {
   // One guaranteed character from each class, then random with all classes.
   const guaranteed = TEMP_ALPHABETS.map(pick);
   const all = TEMP_ALPHABETS.join("");
-  const rest = Array.from({ length: length - guaranteed.length }, () => pick(all));
+  const rest = Array.from({ length: length - guaranteed.length }, () =>
+    pick(all),
+  );
 
   return [...guaranteed, ...rest]
-    .map((value) => ({ value, order: crypto.getRandomValues(new Uint32Array(1))[0] }))
+    .map((value) => ({
+      value,
+      order: crypto.getRandomValues(new Uint32Array(1))[0],
+    }))
     .sort((a, b) => a.order - b.order)
     .map(({ value }) => value)
     .join("");
@@ -139,7 +159,8 @@ export async function callAdminOps(
     const message =
       typeof (error as { context?: unknown }).context === "string"
         ? (error as { context: string }).context
-        : (error as { message?: string }).message ?? "Edge function call failed.";
+        : ((error as { message?: string }).message ??
+          "Edge function call failed.");
     throw new Error(message);
   }
   if (data?.error != null) {
@@ -159,7 +180,9 @@ export interface CreateClinicianInput {
   jobTitle?: string | null;
 }
 
-export function createClinician(input: CreateClinicianInput): Promise<AdminOpsResponse> {
+export function createClinician(
+  input: CreateClinicianInput,
+): Promise<AdminOpsResponse> {
   return callAdminOps("create_clinician", {
     first_name: input.firstName,
     last_name: input.lastName,
@@ -193,7 +216,9 @@ export function enableMember(clinicianId: string): Promise<AdminOpsResponse> {
 
 /* ------------------------------ Org reads --------------------------------- */
 
-export async function getMyOrganization(orgId: string): Promise<Organization | null> {
+export async function getMyOrganization(
+  orgId: string,
+): Promise<Organization | null> {
   const { data, error } = await supabase
     .from("organizations")
     .select("*")
@@ -207,7 +232,7 @@ export async function listOrgMembers(orgId: string): Promise<OrgMember[]> {
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, email, first_name, last_name, department, job_title, role, status, must_set_password, prc_number, created_at, updated_at",
+      "id, email, first_name, last_name, department, job_title, role, status, must_set_password, prc_number, created_at, updated_at, avatar_url",
     )
     .eq("org_id", orgId)
     .order("created_at", { ascending: true });
@@ -264,7 +289,10 @@ export function updateMember(
 /* --------------------------- Password reset flow --------------------------- */
 
 /** Public (anon-allowed) request: clinician asks their admin for a temp password. */
-export async function requestPasswordReset(email: string, note?: string | null): Promise<void> {
+export async function requestPasswordReset(
+  email: string,
+  note?: string | null,
+): Promise<void> {
   const { error } = await supabase.rpc("request_password_reset", {
     target_email: email,
     note: note ?? null,
@@ -272,7 +300,9 @@ export async function requestPasswordReset(email: string, note?: string | null):
   if (error != null) throw error;
 }
 
-export async function listPendingResetRequests(orgId: string): Promise<PasswordResetRequest[]> {
+export async function listPendingResetRequests(
+  orgId: string,
+): Promise<PasswordResetRequest[]> {
   const { data, error } = await supabase
     .from("password_reset_requests")
     .select("*")
@@ -284,7 +314,9 @@ export async function listPendingResetRequests(orgId: string): Promise<PasswordR
 }
 
 /** Dismiss a reset request without issuing a password (marked cancelled). */
-export function dismissResetRequest(requestId: string): Promise<AdminOpsResponse> {
+export function dismissResetRequest(
+  requestId: string,
+): Promise<AdminOpsResponse> {
   return callAdminOps("resolve_reset_request", { reset_request_id: requestId });
 }
 
@@ -336,14 +368,18 @@ export function auditActionLabel(action: string): string {
 /** All known action names (for the audit filter's suggestion list). */
 export const knownAuditActions: string[] = Object.keys(AUDIT_ACTION_LABELS);
 
-export async function listAuditLogs(filter: AuditLogFilter = {}): Promise<AuditLogEntry[]> {
+export async function listAuditLogs(
+  filter: AuditLogFilter = {},
+): Promise<AuditLogEntry[]> {
   const { data, error } = await auditQuery(filter, false);
   if (error != null) throw error;
   return (data ?? []) as AuditLogEntry[];
 }
 
 /** Server-paged audit list with the exact number of matching rows. */
-export async function listAuditLogsPage(filter: AuditLogFilter = {}): Promise<AuditLogPage> {
+export async function listAuditLogsPage(
+  filter: AuditLogFilter = {},
+): Promise<AuditLogPage> {
   const { data, error, count } = await auditQuery(filter, true);
   if (error != null) throw error;
   return { rows: (data ?? []) as AuditLogEntry[], total: count ?? 0 };
@@ -354,7 +390,10 @@ export async function exportAuditLogs(
   filter: AuditLogFilter = {},
   limit = 1000,
 ): Promise<AuditLogEntry[]> {
-  const { data, error } = await auditQuery({ ...filter, offset: 0, limit }, false);
+  const { data, error } = await auditQuery(
+    { ...filter, offset: 0, limit },
+    false,
+  );
   if (error != null) throw error;
   return (data ?? []) as AuditLogEntry[];
 }
@@ -371,12 +410,18 @@ export interface AuditCategoryMeta {
 /** Icon + label per audit category (no colors: tones live in Badge tiers). */
 export function auditCategoryMeta(category: AuditCategory): AuditCategoryMeta {
   switch (category) {
-    case "patient": return { label: "Patients", icon: "personal_injury" };
-    case "assessment": return { label: "Assessments", icon: "labs" };
-    case "vitals": return { label: "Vitals", icon: "monitor_heart" };
-    case "account": return { label: "Accounts", icon: "manage_accounts" };
-    case "organization": return { label: "Organization", icon: "apartment" };
-    case "password_reset": return { label: "Password resets", icon: "key" };
+    case "patient":
+      return { label: "Patients", icon: "personal_injury" };
+    case "assessment":
+      return { label: "Assessments", icon: "labs" };
+    case "vitals":
+      return { label: "Vitals", icon: "monitor_heart" };
+    case "account":
+      return { label: "Accounts", icon: "manage_accounts" };
+    case "organization":
+      return { label: "Organization", icon: "apartment" };
+    case "password_reset":
+      return { label: "Password resets", icon: "key" };
   }
 }
 
@@ -402,10 +447,14 @@ export function describeAuditEntry(entry: AuditLogEntry): string {
       return who + (name != null ? ` — ${name}` : "");
     }
     case "account":
-      return who + (() => {
-        const name = rowName() ?? (typeof meta.email === "string" ? meta.email : null);
-        return name != null ? ` — ${name}` : "";
-      })();
+      return (
+        who +
+        (() => {
+          const name =
+            rowName() ?? (typeof meta.email === "string" ? meta.email : null);
+          return name != null ? ` — ${name}` : "";
+        })()
+      );
     case "organization": {
       const name = rowName();
       return who + (name != null ? ` — ${name}` : "");
@@ -417,4 +466,3 @@ export function describeAuditEntry(entry: AuditLogEntry): string {
       return who;
   }
 }
-

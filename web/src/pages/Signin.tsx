@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 
 import AuthFormShell from "../components/AuthFormShell.tsx";
 import { AuthSplash } from "../components/AuthGuard.tsx";
@@ -36,16 +41,19 @@ export default function Signin() {
   const [errors, setErrors] = useState<Errors>(blankErrors);
 
   const isIdleSignOut = searchParams.get("idle") === "1";
-  const cameFrom = (location.state as { from?: { pathname: string } } | null)?.from?.pathname;
-  const destination = cameFrom && cameFrom !== "/signin" ? cameFrom : "/dashboard";
+  const cameFrom = (location.state as { from?: { pathname: string } } | null)
+    ?.from?.pathname;
+  const destination =
+    cameFrom && cameFrom !== "/signin" ? cameFrom : "/dashboard";
 
   function validate(): boolean {
     const next: Errors = {
-      prc: prc.trim().length === 0
-        ? "Enter your PRC number."
-        : !isPrcFormat(prc)
-          ? "PRC numbers are 6-9 digits — enter them without separators."
-          : null,
+      prc:
+        prc.trim().length === 0
+          ? "Enter your PRC number."
+          : !isPrcFormat(prc)
+            ? "PRC numbers are 6-9 digits — enter them without separators."
+            : null,
       password: password.length === 0 ? "Enter your password." : null,
       form: null,
     };
@@ -63,8 +71,10 @@ export default function Signin() {
       // it to the account email, then the password check proceeds normally.
       // All misses (unknown PRC, inactive/pending account, no PRC on record)
       // resolve to the same message — no existence oracles.
-      const { data: resolvedEmail, error: lookupError } =
-        await supabase.rpc("sign_in_email_for_prc", { p_prc: prc.trim() });
+      const { data: resolvedEmail, error: lookupError } = await supabase.rpc(
+        "sign_in_email_for_prc",
+        { p_prc: prc.trim() },
+      );
       if (lookupError != null) throw lookupError;
 
       const signInEmail =
@@ -88,8 +98,7 @@ export default function Signin() {
 
       setErrors({
         ...blankErrors,
-        form:
-          "No active clinician account matches this PRC number — check it, or ask your administrator.",
+        form: "No active clinician account matches this PRC number — check it, or ask your administrator.",
       });
     } catch (cause) {
       console.error("[palse signin]", cause);
@@ -113,7 +122,8 @@ export default function Signin() {
 
       {isIdleSignOut ? (
         <Notice tone="info" className="mb-5">
-          You were signed out after 15 minutes of inactivity. Please sign in again.
+          You were signed out after 15 minutes of inactivity. Please sign in
+          again.
         </Notice>
       ) : null}
 
@@ -172,7 +182,10 @@ export default function Signin() {
           onExpire={() => setCaptchaToken(null)}
         />
 
-        <PrimaryButton pending={pending} disabled={isCaptchaEnabled() && captchaToken == null}>
+        <PrimaryButton
+          pending={pending}
+          disabled={isCaptchaEnabled() && captchaToken == null}
+        >
           Sign in
         </PrimaryButton>
       </form>

@@ -12,7 +12,10 @@ import { type Organization, getMyOrganization } from "../../lib/admin.ts";
 /** Thin maroon bar under the top bar, animated while a route transition runs. */
 function NavProgress() {
   return (
-    <div aria-hidden="true" className="sticky top-[57px] z-10 h-0.5 overflow-hidden bg-theme-cream">
+    <div
+      aria-hidden="true"
+      className="sticky top-[57px] z-10 h-0.5 overflow-hidden bg-theme-cream"
+    >
       <div className="admin-nav-progress h-full w-full origin-left bg-theme-maroon" />
     </div>
   );
@@ -22,7 +25,12 @@ const NAV_ITEMS = [
   { to: "/admin", label: "Overview", icon: "dashboard", end: true },
   { to: "/admin/members", label: "Members", icon: "group", end: false },
   { to: "/admin/audit-log", label: "Audit log", icon: "history", end: false },
-  { to: "/admin/organization", label: "Organization", icon: "apartment", end: false },
+  {
+    to: "/admin/organization",
+    label: "Organization",
+    icon: "apartment",
+    end: false,
+  },
 ] as const;
 
 /** Top bar label per path (also covers unknown sub-routes). */
@@ -47,7 +55,10 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const mainRef = useRef<HTMLElement | null>(null);
-  const label = useMemo(() => titleForPath(location.pathname), [location.pathname]);
+  const label = useMemo(
+    () => titleForPath(location.pathname),
+    [location.pathname],
+  );
 
   /* ------------------------------ route effect ----------------------------- */
   const [progressing, setProgressing] = useState(false);
@@ -81,7 +92,9 @@ export default function AdminLayout() {
 
   const fullName = useMemo(
     () =>
-      [profile?.first_name, profile?.last_name].filter((v) => v?.trim()).join(" ") ||
+      [profile?.first_name, profile?.last_name]
+        .filter((v) => v?.trim())
+        .join(" ") ||
       profile?.email ||
       "Administrator",
     [profile?.first_name, profile?.last_name, profile?.email],
@@ -133,7 +146,7 @@ export default function AdminLayout() {
 
       {/* Fixed sidebar (desktop) — the spacer div reserves the layout width. */}
       <div className="hidden w-64 shrink-0 md:block" aria-hidden="true" />
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col overflow-y-auto bg-theme-maroon px-4 py-6 md:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col overflow-y-auto bg-theme-maroon px-4 py-6 md:flex bg-[url('images/signup-bg-red.png')]">
         <SidebarContent
           organization={organization}
           onSignOut={() => void handleSignOut()}
@@ -155,9 +168,10 @@ export default function AdminLayout() {
         role="dialog"
         aria-modal="true"
         aria-label="Console menu"
-        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[86vw] flex-col overflow-y-auto bg-theme-maroon px-4 py-6 shadow-card transition-transform duration-200 md:hidden ${
-          drawerOpen ? "visible flex translate-x-0" : "invisible -translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[86vw] flex-col overflow-y-auto bg-theme-maroon px-4 py-6 shadow-card transition-transform duration-200 md:hidden ${drawerOpen
+          ? "visible flex translate-x-0"
+          : "invisible -translate-x-full"
+          }`}
       >
         <SidebarContent
           organization={organization}
@@ -223,8 +237,14 @@ function SidebarContent({
           <BrandMastHead compact />
           {/* Organization badge under the logo */}
           <span className="mt-4 inline-flex max-w-full items-center gap-1.5 rounded-full border border-theme-white/25 bg-theme-white/10 px-3 py-1 text-xs font-semibold text-theme-white">
-            <MsIcon name="apartment" className="shrink-0 text-[14px]" optical={14} />
-            <span className="truncate">{organization?.name ?? "Your organization"}</span>
+            <MsIcon
+              name="apartment"
+              className="shrink-0 text-[14px]"
+              optical={14}
+            />
+            <span className="truncate">
+              {organization?.name ?? "Your organization"}
+            </span>
           </span>
         </div>
         {withClose ? (
@@ -275,7 +295,11 @@ function SidebarContent({
           to="/dashboard"
           className="flex items-center gap-3 rounded-control px-3.5 py-2.5 text-sm font-medium text-theme-white/70 transition-colors duration-150 hover:bg-theme-white/10 hover:text-theme-white focus-visible:outline-2 focus-visible:outline-theme-white"
         >
-          <MsIcon name="medical_services" className="shrink-0 text-[20px]" optical={20} />
+          <MsIcon
+            name="medical_services"
+            className="shrink-0 text-[20px]"
+            optical={20}
+          />
           Clinical app
         </NavLink>
         <button
@@ -323,7 +347,7 @@ function AdminTopBar({
   hamburgerRef: React.RefObject<HTMLButtonElement | null>;
 }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-theme-line bg-theme-white px-4 py-3 md:px-8">
+    <header className="sticky top-0 z-20 border-b border-theme-line bg-theme-white px-4 py-3 md:px-8 bg-[url('images/signup-bg-white.png')] bg-top-right">
       <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <button
@@ -336,9 +360,7 @@ function AdminTopBar({
           >
             <MsIcon name="menu" className="text-[20px]" optical={20} />
           </button>
-          <h2
-            className="truncate text-sm font-bold text-theme-ink md:text-base"
-          >
+          <h2 className="truncate text-sm font-bold text-theme-ink md:text-base">
             {label}
           </h2>
         </div>
@@ -388,7 +410,12 @@ function UserMenu({
 
   const items: UserMenuItem[] = [
     { id: "profile", label: "Profile", icon: "person", to: "/admin/profile" },
-    { id: "clinical", label: "Clinical app", icon: "medical_services", to: "/dashboard" },
+    {
+      id: "clinical",
+      label: "Clinical app",
+      icon: "medical_services",
+      to: "/dashboard",
+    },
     { id: "logout", label: "Log out", icon: "logout", action: "signOut" },
   ];
 
@@ -396,7 +423,10 @@ function UserMenu({
   useEffect(() => {
     if (!open) return;
     function handlePointer(event: MouseEvent) {
-      if (rootRef.current != null && !rootRef.current.contains(event.target as Node)) {
+      if (
+        rootRef.current != null &&
+        !rootRef.current.contains(event.target as Node)
+      ) {
         setOpen(false);
       }
     }
@@ -444,8 +474,12 @@ function UserMenu({
       >
         <Avatar first={firstName} last={lastName} src={avatarUrl} />
         <span className="hidden text-left sm:block">
-          <span className="block text-sm font-semibold text-theme-ink">{fullName}</span>
-          <span className="block text-[11px] text-theme-gray">Administrator</span>
+          <span className="block text-sm font-semibold text-theme-ink">
+            {fullName}
+          </span>
+          <span className="block text-[11px] text-theme-gray">
+            Administrator
+          </span>
         </span>
         <MsIcon
           name={open ? "arrow_drop_up" : "arrow_drop_down"}
@@ -461,10 +495,19 @@ function UserMenu({
           className="absolute right-0 z-40 mt-2 flex w-60 flex-col rounded-card border border-theme-line bg-white p-1.5 shadow-card"
         >
           <div className="flex items-center gap-2.5 px-3 py-2">
-            <Avatar first={firstName} last={lastName} size="sm" src={avatarUrl} />
+            <Avatar
+              first={firstName}
+              last={lastName}
+              size="sm"
+              src={avatarUrl}
+            />
             <span className="flex min-w-0 flex-col">
-              <span className="block truncate text-sm font-semibold text-theme-ink">{fullName}</span>
-              <span className="block truncate text-xs text-theme-gray">{email}</span>
+              <span className="block truncate text-sm font-semibold text-theme-ink">
+                {fullName}
+              </span>
+              <span className="block truncate text-xs text-theme-gray">
+                {email}
+              </span>
             </span>
           </div>
           <div className="my-1 border-t border-theme-line" />

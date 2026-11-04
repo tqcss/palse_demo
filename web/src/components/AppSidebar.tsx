@@ -35,7 +35,7 @@ export default function AppSidebar() {
   return (
     <>
       <div className="w-60"></div>
-      <aside className="hidden w-60 shrink-0 flex-col bg-theme-maroon px-4 py-6 md:flex md:fixed md:h-screen z-30">
+      <aside className="hidden w-60 shrink-0 flex-col bg-theme-maroon px-4 py-6 md:flex md:fixed md:h-screen z-30 bg-[url('images/signup-bg-red.png')] shadow-xl">
         <div className="px-3 pb-8">
           <BrandMastHead compact />
         </div>
@@ -55,7 +55,11 @@ export default function AppSidebar() {
                 ].join(" ")
               }
             >
-              <MsIcon name={item.icon} className="shrink-0 text-[20px]" optical={20} />
+              <MsIcon
+                name={item.icon}
+                className="shrink-0 text-[20px]"
+                optical={20}
+              />
               {item.label}
             </NavLink>
           ))}
@@ -68,7 +72,11 @@ export default function AppSidebar() {
             disabled={signingOut}
             className="flex w-full items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium text-theme-white/60 transition-colors duration-150 hover:bg-theme-white/5 hover:text-theme-white/90 focus-visible:outline-2 focus-visible:outline-theme-white/60 disabled:opacity-60"
           >
-            <MsIcon name="logout" className="shrink-0 text-[20px]" optical={20} />
+            <MsIcon
+              name="logout"
+              className="shrink-0 text-[20px]"
+              optical={20}
+            />
             {signingOut ? "Signing out…" : "Log out"}
           </button>
         </div>
