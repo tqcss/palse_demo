@@ -18,8 +18,14 @@ import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supa
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-api-version",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  // supabase-js sends bare XHR from another origin, and agent-layer client
+  // SDKs preflight *twice*; letting browsers cache the preflight response
+  // removes a whole round-trip of failure opportunities (the production
+  // symptom is 'CORS request did not succeed. Status code: (null)').
+  "Access-Control-Max-Age": "86400",
 };
 
 function json(body: unknown, status = 200): Response {
