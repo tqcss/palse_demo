@@ -6,7 +6,7 @@ import Panel from "../components/Panel.tsx";
 import PatientModal from "../components/PatientModal.tsx";
 import PrimaryButton from "../components/PrimaryButton.tsx";
 import RiskBadge from "../components/RiskBadge.tsx";
-import ConfirmDialog from "../components/ui/ConfirmDialog.tsx";
+import ConfirmDialog from "../components/ConfirmDialog.tsx";
 import PageHeader from "../components/ui/PageHeader.tsx";
 import { Skeleton } from "../components/ui/Skeleton.tsx";
 import EmptyState from "../components/ui/EmptyState.tsx";
@@ -208,12 +208,12 @@ export default function PatientsPage() {
       {deleting != null ? (
         <ConfirmDialog
           title="Delete patient"
-          tone="danger"
+          destructive
           pending={deletePending}
           confirmLabel="Delete patient"
-          onClose={() => setDeleting(null)}
+          onCancel={() => setDeleting(null)}
           onConfirm={() => void confirmDelete()}
-          body={
+          question={
             <p>
               Delete <strong>{formatPatientName(deleting)}</strong>
               {deleting.mrn ? ` (MRN ${deleting.mrn})` : ""}? All of their

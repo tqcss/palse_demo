@@ -6,7 +6,7 @@ import Panel from "../components/Panel.tsx";
 import PrimaryButton from "../components/PrimaryButton.tsx";
 import RiskBadge from "../components/RiskBadge.tsx";
 import Badge from "../components/ui/Badge.tsx";
-import ConfirmDialog from "../components/ui/ConfirmDialog.tsx";
+import ConfirmDialog from "../components/ConfirmDialog.tsx";
 import EmptyState from "../components/ui/EmptyState.tsx";
 import PageHeader from "../components/ui/PageHeader.tsx";
 import { Skeleton } from "../components/ui/Skeleton.tsx";
@@ -161,9 +161,10 @@ export default function Styleguide() {
       {confirmOpen ? (
         <ConfirmDialog
           title="Delete demo data"
-          body={<p>Deletes the demo record including its assessments. This cannot be undone.</p>}
+          destructive
+          question={<p>Deletes the demo record including its assessments. This cannot be undone.</p>}
           confirmLabel="Delete"
-          onClose={() => setConfirmOpen(false)}
+          onCancel={() => setConfirmOpen(false)}
           onConfirm={() => setConfirmOpen(false)}
         />
       ) : null}
