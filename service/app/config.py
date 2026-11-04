@@ -15,7 +15,9 @@ try:
     from dotenv import load_dotenv
 
     load_dotenv(
-        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"),
+        os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"
+        ),
         override=False,
     )
 except ImportError:  # python-dotenv ships with fastapi-cli; plain uvicorn may skip it
@@ -31,7 +33,7 @@ ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
         "ALLOWED_ORIGINS",
-        "http://localhost:5173",
+        "http://localhost:5173,https://palse-demo.vercel.app",
     ).split(",")
     if origin.strip()
 ]
