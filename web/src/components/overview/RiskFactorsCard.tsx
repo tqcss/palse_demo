@@ -4,7 +4,6 @@ import MsIcon from "../MsIcon.tsx";
 import BodyHologram from "./BodyHologram.tsx";
 import CardShell from "./CardShell.tsx";
 import {
-  CITATIONS,
   RISK_FACTOR_CARDS,
   RISK_FACTORS_DISCLAIMER,
   RISK_FACTORS_SUBTITLE,

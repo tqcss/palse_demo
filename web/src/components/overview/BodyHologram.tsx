@@ -3,7 +3,6 @@ import { useSearchParams } from "react-router-dom";
 
 import MsIcon from "../MsIcon.tsx";
 import { BODY_SYSTEMS, type BodySystem } from "../../content/bodySystems.ts";
-import { CITATIONS } from "../../content/riskOverview.ts";
 
 /**
  * The hologram view of the "Sepsis Risk Factors" card: the baby PNG with four
@@ -391,8 +390,6 @@ function SystemDetails({
   system: BodySystem;
   titleId: string;
 }) {
-  const citation =
-    system.citationKey != null ? CITATIONS[system.citationKey] : null;
   return (
     <div>
       <div className="flex items-center gap-2.5">
@@ -422,9 +419,6 @@ function SystemDetails({
       <p className="mt-3 text-xs leading-relaxed text-theme-ink-soft">
         {system.whyItMatters}
       </p>
-      {citation ? (
-        <p className="mt-2 text-[11px] text-theme-gray">Source: {citation}</p>
-      ) : null}
     </div>
   );
 }

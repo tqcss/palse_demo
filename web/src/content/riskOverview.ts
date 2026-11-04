@@ -6,11 +6,6 @@
 // contained. Where the mockup gave no citation, the key is omitted and the
 // UI renders no citation line at all.
 
-/** Citation text keyed for reuse between the factor cards and body systems. */
-export const CITATIONS: Record<string, string> = {
-  // Explicitly shown in the mockup ("Cotten et al., 2011"). Unverified.
-};
-
 export interface RiskFactorCard {
   id: string;
   title: string;
@@ -18,7 +13,6 @@ export interface RiskFactorCard {
   subline: string;
   /** "high" | "moderate" | "low" | "pending" drives the dot color only. */
   accent: "high" | "moderate" | "low" | "pending";
-  citationKey: string | null;
 }
 
 export const RISK_FACTOR_CARDS: readonly RiskFactorCard[] = [
@@ -28,7 +22,6 @@ export const RISK_FACTOR_CARDS: readonly RiskFactorCard[] = [
     detail: "< 37 weeks gestation",
     subline: "Increases risk by 2-4x",
     accent: "high",
-    citationKey: null,
   },
   {
     id: "birth-weight",
@@ -36,7 +29,6 @@ export const RISK_FACTOR_CARDS: readonly RiskFactorCard[] = [
     detail: "< 2500 g",
     subline: "Associated with higher risk",
     accent: "moderate",
-    citationKey: null,
   },
   {
     id: "maternal",
@@ -44,7 +36,6 @@ export const RISK_FACTOR_CARDS: readonly RiskFactorCard[] = [
     detail: "Chorioamnionitis or fever",
     subline: "Significant risk factor",
     accent: "pending",
-    citationKey: null,
   },
   {
     id: "early-onset",
@@ -52,7 +43,6 @@ export const RISK_FACTOR_CARDS: readonly RiskFactorCard[] = [
     detail: "Higher risk than late onset",
     subline: "",
     accent: "low",
-    citationKey: null,
   },
 ];
 

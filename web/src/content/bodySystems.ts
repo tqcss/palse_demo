@@ -31,7 +31,6 @@ export interface BodySystem {
   signs: string[];
   /** "Why it matters" one-liner (TODO(clinical-review)). */
   whyItMatters: string;
-  citationKey: string | null;
 }
 
 export const BODY_SYSTEMS: readonly BodySystem[] = [
@@ -45,7 +44,6 @@ export const BODY_SYSTEMS: readonly BodySystem[] = [
     signs: ["Lethargy", "Irritability", "Seizures"],
     whyItMatters:
       "Early behavior changes are often the first nonspecific sign of neonatal sepsis.",
-    citationKey: null,
   },
   {
     id: "respiratory",
@@ -57,7 +55,6 @@ export const BODY_SYSTEMS: readonly BodySystem[] = [
     signs: ["Tachypnea", "Apnea", "Oxygen requirement"],
     whyItMatters:
       "Respiratory distress is the most frequent presenting sign of early-onset sepsis.",
-    citationKey: null,
   },
   {
     id: "cardiovascular",
@@ -69,7 +66,6 @@ export const BODY_SYSTEMS: readonly BodySystem[] = [
     signs: ["Tachycardia", "Hypotension"],
     whyItMatters:
       "Circulatory compromise can progress quickly and needs immediate review.",
-    citationKey: null,
   },
   {
     id: "gastrointestinal",
@@ -81,7 +77,6 @@ export const BODY_SYSTEMS: readonly BodySystem[] = [
     signs: ["Feeding intolerance", "Vomiting"],
     whyItMatters:
       "Feeding changes are common in early infection and easy to miss between feeds.",
-    citationKey: null,
   },
 ];
 
