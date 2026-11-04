@@ -1525,11 +1525,11 @@ const DONUT_COLORS: Record<string, string> = {
 
 function ScoredResultsPanel({
   result,
-  predicting,
+  // predicting,
   report,
 }: {
   result: PredictionResult;
-  predicting: boolean;
+  // predicting: boolean;
   report: ScoredReportContext | null;
 }) {
   const [downloading, setDownloading] = useState(false);
