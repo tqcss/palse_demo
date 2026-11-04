@@ -18,7 +18,7 @@ jobs:
       run:
         working-directory: service
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # 3.12 matches render.yaml's PYTHON_VERSION — same interpreter the
       # artifacts are served with.
