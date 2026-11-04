@@ -27,7 +27,11 @@ interface ReportStats {
 
 export interface ReportEntry {
   id: string;
+  /** Full name (tooltip/a11y only — surfaces show initials for privacy). */
   patientName: string;
+  /** Identity shown in tables/PDF: two-letter initials (+ MRN line). */
+  patientInitials: string;
+  mrn: string | null;
   status: AssessmentStatus;
   createdAt: string;
   /** Engine risk label of the assessment, or null when unscored. */

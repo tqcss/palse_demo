@@ -181,7 +181,7 @@ export function RequireAdminNoOrg({ children }: { children: ReactNode }) {
 
 /** Admin status: pending after signup until a superadmin confirms the account. */
 export function AwaitingApproval() {
-  const { refetchProfile, profile, signOut } = useAuth();
+  const { refetchProfile, profile } = useAuth();
   const [rechecking, setRechecking] = useState(false);
   const [checkError, setCheckError] = useState<string | null>(null);
 
@@ -214,13 +214,7 @@ export function AwaitingApproval() {
       <PrimaryButton pending={rechecking} onClick={() => void handleRecheck()} type="button">
         Re-check approval status
       </PrimaryButton>
-      <button
-        type="button"
-        onClick={() => void signOut()}
-        className="rounded-lg border border-theme-white/30 px-4 py-2 text-sm font-semibold text-theme-white transition-colors hover:bg-theme-white/10 focus-visible:outline-2 focus-visible:outline-theme-white/60"
-      >
-        Sign out
-      </button>
+      {/* No extra sign-out button here: BlockedScreen already renders one. */}
       {checkError ? (
         <p className="w-full text-xs text-risk-moderate-fg">{checkError}</p>
       ) : null}

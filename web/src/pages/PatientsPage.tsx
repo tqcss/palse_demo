@@ -15,6 +15,7 @@ import { guide } from "../lib/authErrors.ts";
 import type { RiskLevel } from "../lib/patient.ts";
 import {
   formatDateLabel,
+  formatPatientInitials,
   formatPatientName,
 } from "../lib/patient.ts";
 import type { Patient } from "../lib/patient.ts";
@@ -260,11 +261,17 @@ function PatientTable({
                 className="border-b border-theme-line/60 last:border-0 odd:bg-white even:bg-theme-light-gray/25"
               >
                 <td className="px-5 py-3.5">
-                  <div className="font-semibold text-theme-ink">
-                    {formatPatientName(patient)}
+                  {/* Initials + MRN for privacy; full name for assistive tech. */}
+                  <div
+                    className="font-semibold text-theme-ink"
+                    aria-label={formatPatientName(patient)}
+                  >
+                    <span aria-hidden title={formatPatientName(patient)}>
+                      {formatPatientInitials(patient)}
+                    </span>
                   </div>
                   <div className="text-xs text-theme-gray">
-                    {patient.mrn ? `MRN ${patient.mrn}` : "No MRN"}
+                    MRN {patient.mrn ?? "—"}
                   </div>
                 </td>
                 <td className="px-3 py-3.5 capitalize text-theme-ink-soft">
@@ -308,12 +315,16 @@ function PatientTable({
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-sm font-semibold text-theme-ink">
-                  {formatPatientName(patient)}
+                <div
+                  className="text-sm font-semibold text-theme-ink"
+                  aria-label={formatPatientName(patient)}
+                >
+                  <span aria-hidden title={formatPatientName(patient)}>
+                    {formatPatientInitials(patient)}
+                  </span>
                 </div>
                 <div className="text-xs text-theme-gray">
-                  {patient.mrn ? `MRN ${patient.mrn}` : "No MRN"} · added{" "}
-                  {formatDateLabel(patient.createdAt)}
+                  MRN {patient.mrn ?? "—"} · added {formatDateLabel(patient.createdAt)}
                 </div>
               </div>
               <RiskBadge level={patient.riskLevel} />

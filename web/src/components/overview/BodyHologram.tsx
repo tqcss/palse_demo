@@ -191,6 +191,15 @@ export default function BodyHologram() {
                     system.label.side === "right"
                       ? "translateY(-50%)"
                       : "translate(-100%, -50%)",
+                  // The open system's pill (and its popover) must paint above
+                  // the sibling pills; <li> creates the stacking context, so
+                  // the popover's own z-index can't escape it.
+                  zIndex:
+                    selectedId === system.id
+                      ? "var(--z-dropdown)"
+                      : selectedId == null || activeId === system.id
+                        ? "var(--z-nav)"
+                        : undefined,
                 }}
               >
                 <button

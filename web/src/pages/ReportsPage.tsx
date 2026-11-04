@@ -21,6 +21,7 @@ import type { Assessment } from "../lib/assessment.ts";
 import type { Patient, RiskLevel } from "../lib/patient.ts";
 import {
   formatDateLabel,
+  formatPatientInitials,
   formatPatientName,
 } from "../lib/patient.ts";
 import { usePageTitle } from "../hooks/usePageTitle.ts";
@@ -87,11 +88,12 @@ export default function ReportsPage() {
   const recent = useMemo((): ReportEntry[] => {
     return (assessments ?? []).slice(0, 8).map((assessment) => {
       const prediction: PredictionResult | null = assessmentPrediction(assessment);
+      const patient = patientById.get(assessment.patientId) ?? null;
       return {
         id: assessment.id,
-        patientName: patientById.get(assessment.patientId) != null
-          ? formatPatientName(patientById.get(assessment.patientId) as Patient)
-          : "—",
+        patientName: patient != null ? formatPatientName(patient) : "—",
+        patientInitials: patient != null ? formatPatientInitials(patient) : "—",
+        mrn: patient?.mrn ?? null,
         status: assessment.status,
         createdAt: assessment.createdAt,
         riskLabel: prediction?.riskLabel ?? null,
@@ -250,8 +252,18 @@ export default function ReportsPage() {
                           <td className="px-4 py-2.5 font-mono text-xs text-theme-ink-soft">
                             {entry.id.slice(0, 8)}…
                           </td>
-                          <td className="px-4 py-2.5 font-medium text-theme-ink">
-                            {entry.patientName || "—"}
+                          <td className="px-4 py-2.5">
+                            <div
+                              className="font-medium text-theme-ink"
+                              title={entry.patientName || undefined}
+                            >
+                              <span aria-hidden>{entry.patientInitials}</span>
+                            </div>
+                            {entry.mrn != null ? (
+                              <div className="text-[11px] text-theme-gray">
+                                MRN {entry.mrn}
+                              </div>
+                            ) : null}
                           </td>
                           <td className="px-4 py-2.5">
                             <StatusChip status={entry.status} />
@@ -297,13 +309,14 @@ export default function ReportsPage() {
                       className="rounded-card border border-theme-line bg-white p-3.5"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-semibold text-theme-ink">
-                          {entry.patientName || "—"}
+                        <span className="text-sm font-semibold text-theme-ink" title={entry.patientName || undefined}>
+                          <span aria-hidden>{entry.patientInitials}</span>
                         </span>
                         <StatusChip status={entry.status} />
                       </div>
                       <div className="mt-1 text-xs text-theme-gray">
                         <span className="font-mono">{entry.id.slice(0, 8)}…</span>
+                        {entry.mrn != null ? ` · MRN ${entry.mrn}` : ""}
                         {" · "}
                         {formatDateLabel(entry.createdAt)}
                       </div>
