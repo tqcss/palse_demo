@@ -28,7 +28,7 @@ function withinRange(value: number, min: number, max: number): boolean {
 /**
  * Register-new-patient dialog, shared by the dashboard wizard (compact set)
  * and the registry's Add Patient (full set with DOB, delivery mode and
- * notes). Both modes capture the MRN; the rest is registry-only. Creates a
+ * notes). Both modes require the MRN; the rest is registry-only. Creates a
  * real `patients` row.
  */
 export default function PatientModal({
@@ -62,6 +62,13 @@ export default function PatientModal({
       setError("Enter at least the patient's first and last name.");
       return;
     }
+    // MRN is the required cross-system identifier (registry surfaces display
+    // name initials alongside it, so a missing MRN would leave an
+    // unidentifiable row).
+    if (mrn.trim() === "") {
+      setError("MRN is required for every patient registration.");
+      return;
+    }
     const ga = gestationalAgeWeeks.trim();
     const bw = birthWeightGrams.trim();
     if (ga !== "" && !withinRange(Number(ga), 20, 45)) {
@@ -82,7 +89,7 @@ export default function PatientModal({
           sex,
           gestationalAgeWeeks: ga === "" ? null : Number(ga),
           birthWeightGrams: bw === "" ? null : Number(bw),
-          mrn: mrn.trim() !== "" ? mrn.trim() : null,
+          mrn: mrn.trim(),
         },
         full
           ? {
@@ -122,7 +129,8 @@ export default function PatientModal({
 
         <FormInput
           id="new-mrn"
-          label="MRN № (optional)"
+          label="MRN №"
+          hint="Required — the patient's medical record number."
           placeholder="e.g. NEO-2024-001"
           value={mrn}
           onChange={(event) => setMrn(event.target.value)}

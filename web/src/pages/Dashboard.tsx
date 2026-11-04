@@ -1513,7 +1513,9 @@ function ScoredResultsPanel({
           role="img"
           aria-label={`Sepsis risk probability ${result.probabilityPercent}%`}
         >
-          <div className="absolute inset-[10px] flex h-[86px] w-[86px] flex-col items-center justify-center rounded-full bg-white">
+          {/* Center disc: inset alone keeps it perfectly centered — no
+              conflicting fixed height (that pushed it off-center). */}
+          <div className="absolute inset-[10px] flex flex-col items-center justify-center rounded-full bg-white">
             <span className="text-xl font-bold text-theme-ink">
               {result.probabilityPercent}%
             </span>

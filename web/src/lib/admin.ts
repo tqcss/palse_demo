@@ -21,6 +21,8 @@ export interface OrgMember {
   role: UserRole;
   status: "pending" | "active" | "disabled";
   must_set_password: boolean;
+  /** PRC license number (null until the backfill / for admins). */
+  prc_number: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -150,6 +152,8 @@ export interface CreateClinicianInput {
   firstName: string;
   lastName: string;
   email: string;
+  /** PRC license number (6-9 digits) — the clinician's sign-in identity. */
+  prcNumber: string;
   tempPassword: string;
   department?: string | null;
   jobTitle?: string | null;
@@ -160,6 +164,7 @@ export function createClinician(input: CreateClinicianInput): Promise<AdminOpsRe
     first_name: input.firstName,
     last_name: input.lastName,
     email: input.email,
+    prc_number: input.prcNumber,
     temp_password: input.tempPassword,
     department: input.department ?? null,
     job_title: input.jobTitle ?? null,
@@ -202,7 +207,7 @@ export async function listOrgMembers(orgId: string): Promise<OrgMember[]> {
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, email, first_name, last_name, department, job_title, role, status, must_set_password, created_at, updated_at",
+      "id, email, first_name, last_name, department, job_title, role, status, must_set_password, prc_number, created_at, updated_at",
     )
     .eq("org_id", orgId)
     .order("created_at", { ascending: true });
@@ -242,6 +247,8 @@ export function updateMember(
     lastName: string;
     department?: string | null;
     jobTitle?: string | null;
+    /** PRC license number (6-9 digits) — required for account sign-in. */
+    prcNumber?: string | null;
   },
 ): Promise<AdminOpsResponse> {
   return callAdminOps("update_member", {
@@ -250,6 +257,7 @@ export function updateMember(
     last_name: patch.lastName,
     department: patch.department ?? null,
     job_title: patch.jobTitle ?? null,
+    prc_number: patch.prcNumber ?? null,
   });
 }
 

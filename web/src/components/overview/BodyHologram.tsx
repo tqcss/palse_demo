@@ -191,6 +191,15 @@ export default function BodyHologram() {
                     system.label.side === "right"
                       ? "translateY(-50%)"
                       : "translate(-100%, -50%)",
+                  // The open system's pill (and its popover) must paint above
+                  // the sibling pills; <li> creates the stacking context, so
+                  // the popover's own z-index can't escape it.
+                  zIndex:
+                    selectedId === system.id
+                      ? "var(--z-dropdown)"
+                      : selectedId == null || activeId === system.id
+                        ? "var(--z-nav)"
+                        : undefined,
                 }}
               >
                 <button
@@ -366,10 +375,9 @@ function SystemPopover({
       <button
         type="button"
         onClick={onClose}
-        className="mt-3 inline-flex min-h-10 items-center gap-1.5 rounded-control border border-theme-line px-3 text-xs font-semibold text-theme-ink transition-colors hover:bg-theme-light-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-maroon"
+        className="absolute top-0 right-3 mt-3 inline-flex min-h-8 items-center rounded-control border border-theme-line px-2 text-xs font-semibold text-theme-ink transition-colors hover:bg-theme-light-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-maroon"
       >
         <MsIcon name="close" className="text-[16px]" optical={18} />
-        Close
       </button>
     </div>
   );

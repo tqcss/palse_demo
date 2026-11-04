@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import type { ComponentType } from "react";
 
 import { useAuth } from "../context/useAuth.ts";
+import Avatar from "./ui/Avatar.tsx";
 
 /** Strip for small screens (< md): horizontal nav icons. */
 export function AppMobileNav() {
@@ -59,12 +60,6 @@ function titleForPath(path: string): string {
   );
 }
 
-function initialsOf(firstName: string | null, lastName: string | null): string {
-  const a = firstName?.trim()?.[0] ?? "";
-  const b = lastName?.trim()?.[0] ?? "";
-  return `${a}${b}`.toUpperCase() || "·";
-}
-
 /** Top app bar: page context + identity, linking to the profile page. */
 const Topbar: ComponentType = function Topbar() {
   const { profile, user, session } = useAuth();
@@ -106,12 +101,7 @@ const Topbar: ComponentType = function Topbar() {
               {profile?.job_title || profile?.department || "Clinical team"}
             </div>
           </div>
-          <span
-            aria-hidden
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-theme-maroon text-xs font-bold text-theme-white"
-          >
-            {initialsOf(firstName, lastName)}
-          </span>
+          <Avatar first={firstName} last={lastName} src={profile?.avatar_url ?? null} />
         </Link>
       </div>
     </header>

@@ -259,6 +259,11 @@ export default function EditPatientPage() {
       setSaveError("The patient needs a first and last name.");
       return;
     }
+    // MRN is the required cross-system identifier (see PatientModal).
+    if (formState.mrn.trim() === "") {
+      setSaveError("MRN is required for every patient.");
+      return;
+    }
     const ga = formState.gestationalAgeWeeks.trim();
     if (ga !== "" && !(Number(ga) >= 20 && Number(ga) <= 45)) {
       setSaveError("Gestational age must be between 20 and 45 weeks.");
@@ -492,6 +497,7 @@ export default function EditPatientPage() {
           <FormInput
             id="edit-mrn"
             label="MRN №"
+            hint="Required — the patient's medical record number."
             placeholder="e.g. NEO-2024-001"
             value={form.mrn}
             onChange={(event) => patchForm({ mrn: event.target.value })}

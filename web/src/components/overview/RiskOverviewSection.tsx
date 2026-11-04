@@ -50,7 +50,7 @@ export default function RiskOverviewSection() {
       <div className="mb-3 flex items-center justify-between gap-3">
         <span className="flex items-center gap-2">
           <MsIcon
-            name={hidden ? "expand_more" : "expand_less"}
+            name="overview"
             className="text-[18px] text-theme-maroon"
             optical={20}
             aria-hidden

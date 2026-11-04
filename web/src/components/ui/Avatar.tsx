@@ -5,14 +5,18 @@ export function initialsOf(first: string | null | undefined, last: string | null
   return `${a}${b}`.toUpperCase() || "?";
 }
 
+/** Avatar with optional image (falls back to the maroon initials disc). */
 export default function Avatar({
   first,
   last,
+  src,
   size = "md",
   className,
 }: {
   first?: string | null;
   last?: string | null;
+  /** Public URL of an uploaded profile photo; initials are the fallback. */
+  src?: string | null;
   size?: "sm" | "md" | "lg";
   className?: string;
 }) {
@@ -22,12 +26,23 @@ export default function Avatar({
     lg: "h-12 w-12 text-sm",
   }[size];
 
+  const hasImage = src != null && src.trim() !== "";
+
   return (
     <span
       aria-hidden="true"
-      className={`flex shrink-0 items-center justify-center rounded-full bg-theme-maroon font-bold text-theme-white ${sizeClasses} ${className ?? ""}`}
+      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-theme-maroon font-bold text-theme-white ${sizeClasses} ${className ?? ""}`}
     >
-      {initialsOf(first, last)}
+      {hasImage ? (
+        <img
+          src={src}
+          alt=""
+          className="h-full w-full object-cover"
+          draggable={false}
+        />
+      ) : (
+        initialsOf(first, last)
+      )}
     </span>
   );
 }

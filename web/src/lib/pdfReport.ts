@@ -162,6 +162,16 @@ function titleCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+/** "Maria Clara Santos" → "MCS" (privacy-minimized registry identity). */
+function initialsOfName(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "—";
+  return parts
+    .slice(0, 3)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+}
+
 function safeFileSegment(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "patient";
 }
@@ -180,40 +190,50 @@ export async function downloadScoredReport(ctx: ScoredReportContext): Promise<vo
   const contentW = PAGE_W - MARGIN * 2;
   const tier = ctx.result.riskLabel.split(" ")[0];
   const tierColor = TIER_COLORS[tier] ?? TIER_COLORS.MODERATE;
+  const initials = initialsOfName(ctx.patientName);
 
-  /* Header */
+  /* Header — brand row, document title, meta block right-aligned. */
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
+  doc.setFontSize(19);
   doc.setTextColor(...MAROON);
-  doc.text("Pal.se", MARGIN, 20);
-  doc.setFontSize(13);
-  doc.setTextColor(20, 20, 20);
-  doc.text("Neonatal Sepsis Risk Report", MARGIN, 27);
+  doc.text("Pal.se", MARGIN, 21);
   doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.text("Early-Onset Neonatal Sepsis Prediction", MARGIN, 26.5);
+
   doc.setFontSize(9);
   doc.setTextColor(...GRAY);
-  doc.text(`Scored ${fmtDate(ctx.scoredAt)}`, MARGIN, 32.5);
-  doc.setDrawColor(...MAROON);
-  doc.setLineWidth(0.6);
-  doc.line(MARGIN, 35.5, PAGE_W - MARGIN, 35.5);
+  doc.text("Screening report", PAGE_W - MARGIN, 17.5, { align: "right" });
+  doc.text(`Scored ${fmtDate(ctx.scoredAt)}`, PAGE_W - MARGIN, 22.5, {
+    align: "right",
+  });
+  doc.text(`Threshold ${ctx.result.threshold.toFixed(2)}`, PAGE_W - MARGIN, 27.5, {
+    align: "right",
+  });
 
-  /* Patient identification line */
+  doc.setDrawColor(...MAROON);
+  doc.setLineWidth(0.7);
+  doc.line(MARGIN, 31.5, PAGE_W - MARGIN, 31.5);
+
+  /* Patient identification: initials only + MRN (privacy-minimized). */
+  let y = 39;
+  doc.setFillColor(245, 240, 238);
+  doc.roundedRect(MARGIN, y, contentW, 11, 2.5, 2.5, "F");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
+  doc.setFontSize(11.5);
   doc.setTextColor(20, 20, 20);
-  doc.text(ctx.patientName, MARGIN, 42);
+  doc.text(initials, MARGIN + 5, y + 7.3);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9.5);
   doc.setTextColor(...GRAY);
-  doc.text(
-    ctx.mrn ? `MRN ${ctx.mrn}` : `Patient ID ${ctx.patientId}`,
-    PAGE_W - MARGIN,
-    42,
-    { align: "right" },
-  );
+  const idLine = ctx.mrn != null ? `MRN ${ctx.mrn}` : `Encounter ${ctx.patientId}`;
+  doc.text(idLine, MARGIN + 5 + doc.getTextWidth(initials) + 6, y + 7.3);
+  doc.text("Patient identity minimized — see full record for names", PAGE_W - MARGIN - 5, y + 7.3, {
+    align: "right",
+  });
+  y += 17;
 
   /* Result banner */
-  let y = 47;
   doc.setFillColor(tierColor[0], tierColor[1], tierColor[2]);
   doc.roundedRect(MARGIN, y, contentW, 16, 3, 3, "F");
   doc.setFont("helvetica", "bold");
@@ -224,26 +244,36 @@ export async function downloadScoredReport(ctx: ScoredReportContext): Promise<vo
   doc.text(`${ctx.result.probabilityPercent}%`, PAGE_W - MARGIN - 5, y + 10.5, {
     align: "right",
   });
-  y += 22;
+  y += 24;
 
-  /* Section tables */
+  /* Section tables: small maroon section label + clean line-separated rows. */
   const rows = sectionRows(ctx.sections);
   for (const [title, pairs] of rows) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(...MAROON);
+    doc.text(title.toUpperCase(), MARGIN, y + 3.5);
+    y += 7;
     autoTable(doc, {
       startY: y,
-      head: [[title, ""]],
       body: pairs.map(([k, v]) => [k, v]),
-      theme: "grid",
+      theme: "plain",
       margin: { left: MARGIN, right: MARGIN },
       tableWidth: contentW,
-      styles: { fontSize: 9, cellPadding: 1.8, textColor: [30, 30, 30] },
-      headStyles: { fillColor: MAROON, fontSize: 9.5, halign: "left" },
+      styles: {
+        fontSize: 9,
+        cellPadding: { top: 2.2, bottom: 2.2, left: 3, right: 3 },
+        textColor: [40, 38, 37],
+        lineColor: [232, 227, 221],
+        lineWidth: { bottom: 0.35 },
+      },
+      alternateRowStyles: { fillColor: [250, 247, 245] },
       columnStyles: {
-        0: { cellWidth: contentW * 0.55, fontStyle: "normal" },
-        1: { halign: "right" },
+        0: { cellWidth: contentW * 0.62 },
+        1: { halign: "right", fontStyle: "bold", textColor: [20, 20, 20] },
       },
     });
-    y = (doc.lastAutoTable?.finalY ?? y) + 7;
+    y = (doc.lastAutoTable?.finalY ?? y) + 9;
     if (y > doc.internal.pageSize.getHeight() - 30) {
       doc.addPage();
       y = 20;
@@ -261,12 +291,15 @@ export async function downloadScoredReport(ctx: ScoredReportContext): Promise<vo
     doc.text(
       "Screening support generated by the Pal.se prediction engine — not a clinical diagnosis.",
       MARGIN,
-      height - 10,
+      height - 12,
     );
     doc.setFont("helvetica", "normal");
-    doc.text(`Page ${page} of ${pages}`, PAGE_W - MARGIN, height - 10, {
+    doc.text(`Page ${page} of ${pages}`, PAGE_W - MARGIN, height - 12, {
       align: "right",
     });
+    doc.setDrawColor(...[232, 227, 221]);
+    doc.setLineWidth(0.35);
+    doc.line(MARGIN, height - 16, PAGE_W - MARGIN, height - 16);
   }
 
   const stamp = ctx.scoredAt.slice(0, 16).replace(/[-:T]/g, "");

@@ -28,6 +28,18 @@ export function formatPatientName(patient: Patient): string {
   return `${patient.firstName} ${patient.lastName}`.trim();
 }
 
+/**
+ * Initials ("Jd" → uppercase "JD") for registry/report displays, where patient
+ * names are minimized for privacy and the required MRN carries identity.
+ * Falls back to "—" only when both name parts are empty.
+ */
+export function formatPatientInitials(patient: Patient): string {
+  const first = patient.firstName.trim().charAt(0);
+  const last = patient.lastName.trim().charAt(0);
+  const initials = `${first}${last}`.toUpperCase();
+  return initials === "" ? "—" : initials;
+}
+
 /** Short human date for table cells and record stamps (e.g. "Jan 24, 2026"). */
 export function formatDateLabel(iso: string | null): string {
   if (iso == null || iso === "") return "—";
