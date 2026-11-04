@@ -1577,7 +1577,7 @@ function ScoredResultsPanel({
               {result.probabilityPercent}%
             </span>
             <span
-              className={`mt-0.5 text-[10px] font-bold uppercase ${tone.fg}`}
+              className={`mt-0.5 text-[10px] text-center font-bold uppercase ${tone.fg}`}
             >
               {result.predictedEos ? "Predicted EOS" : "Below threshold"}
             </span>
@@ -1617,12 +1617,12 @@ function ScoredResultsPanel({
         </div>
       ) : null}
 
-      <p className="border-t border-theme-line pt-3 text-xs text-theme-gray">
-        Model provenance — XGBoost {Math.round(result.xgbEosProbability * 100)}%
-        · TFT {Math.round(result.tftEosProbability * 100)}% ({result.tftSource})
-        · {result.inferenceMs} ms
-        {predicting ? " · rescoring…" : ""}
-      </p>
+      {/* <p className="border-t border-theme-line pt-3 text-xs text-theme-gray"> */}
+      {/*   Model provenance — XGBoost {Math.round(result.xgbEosProbability * 100)}% */}
+      {/*   · TFT {Math.round(result.tftEosProbability * 100)}% ({result.tftSource}) */}
+      {/*   · {result.inferenceMs} ms */}
+      {/*   {predicting ? " · rescoring…" : ""} */}
+      {/* </p> */}
 
       {report != null ? (
         <div className="flex flex-col gap-1.5">

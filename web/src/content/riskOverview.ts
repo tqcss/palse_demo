@@ -9,7 +9,6 @@
 /** Citation text keyed for reuse between the factor cards and body systems. */
 export const CITATIONS: Record<string, string> = {
   // Explicitly shown in the mockup ("Cotten et al., 2011"). Unverified.
-  cotten2011: "Cotten et al., 2011",
 };
 
 export interface RiskFactorCard {
@@ -29,7 +28,7 @@ export const RISK_FACTOR_CARDS: readonly RiskFactorCard[] = [
     detail: "< 37 weeks gestation",
     subline: "Increases risk by 2-4x",
     accent: "high",
-    citationKey: "cotten2011",
+    citationKey: null,
   },
   {
     id: "birth-weight",
@@ -76,4 +75,3 @@ export const INSIGHT_FOLLOWUPS = {
   pending: "Complete intake sections for accurate prediction.",
   empty: "No patients yet. Register a patient to see population insights.",
 };
-

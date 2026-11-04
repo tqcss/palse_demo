@@ -114,13 +114,7 @@ function FactorCard({ factor }: { factor: RiskFactorCard }) {
                 : "[grid-template-rows:0fr] opacity-0",
             ].join(" ")}
           >
-            <div className="min-h-0 overflow-hidden">
-              <p className="mt-1.5 border-t border-theme-line pt-1.5 text-[11px] italic leading-relaxed text-theme-gray">
-                {factor.citationKey != null
-                  ? `Source: ${CITATIONS[factor.citationKey]} (citation unverified)`
-                  : "Source under clinical review"}
-              </p>
-            </div>
+            <div className="min-h-0 overflow-hidden"></div>
           </div>
         </div>
       </div>
