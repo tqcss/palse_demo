@@ -33,7 +33,7 @@ ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
         "ALLOWED_ORIGINS",
-        "http://localhost:5173,https://palse-demo.vercel.app",
+        "http://localhost:5173,http://127.0.0.1:5173,https://palse-demo.vercel.app",
     ).split(",")
     if origin.strip()
 ]
