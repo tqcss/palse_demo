@@ -10,7 +10,7 @@ import { useAuth } from "../context/useAuth";
 /** Full-page spinner shown until the initial auth state resolves. */
 export function AuthSplash() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-theme-maroon bg-[url('images/signup-bg-red.png')]">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-theme-maroon bg-[url('/images/signup-bg-red.png')]">
       <BrandMastHead />
       <span
         aria-label="Loading"

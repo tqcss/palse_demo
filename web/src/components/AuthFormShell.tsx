@@ -11,7 +11,7 @@ import SideCover from "./SideCover.tsx";
  */
 export default function AuthFormShell({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-theme-white bg-[url('images/signup-bg-white.png')]">
+    <div className="flex h-screen w-full overflow-hidden bg-theme-white bg-[url('/images/signup-bg-white.png')]">
       {/* Brand bar only where the SideCover is hidden */}
       <div className="flex flex-col justify-center bg-theme-maroon px-8 py-5 lg:hidden">
         <BrandMastHead compact />

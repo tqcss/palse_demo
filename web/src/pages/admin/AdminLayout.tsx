@@ -146,7 +146,7 @@ export default function AdminLayout() {
 
       {/* Fixed sidebar (desktop) — the spacer div reserves the layout width. */}
       <div className="hidden w-64 shrink-0 md:block" aria-hidden="true" />
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col overflow-y-auto bg-theme-maroon px-4 py-6 md:flex bg-[url('images/signup-bg-red.png')]">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col overflow-y-auto bg-theme-maroon px-4 py-6 md:flex bg-[url('/images/signup-bg-red.png')]">
         <SidebarContent
           organization={organization}
           onSignOut={() => void handleSignOut()}
@@ -347,7 +347,7 @@ function AdminTopBar({
   hamburgerRef: React.RefObject<HTMLButtonElement | null>;
 }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-theme-line bg-theme-white px-4 py-3 md:px-8 bg-[url('images/signup-bg-white.png')] bg-top-right">
+    <header className="sticky top-0 z-20 border-b border-theme-line bg-theme-white px-4 py-3 md:px-8 bg-[url('/images/signup-bg-white.png')] bg-top-right">
       <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <button

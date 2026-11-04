@@ -35,7 +35,7 @@ export default function AppSidebar() {
   return (
     <>
       <div className="w-60"></div>
-      <aside className="hidden w-60 shrink-0 flex-col bg-theme-maroon px-4 py-6 md:flex md:fixed md:h-screen z-30 bg-[url('images/signup-bg-red.png')] shadow-xl">
+      <aside className="hidden w-60 shrink-0 flex-col bg-theme-maroon px-4 py-6 md:flex md:fixed md:h-screen z-30 bg-[url('/images/signup-bg-red.png')] shadow-xl">
         <div className="px-3 pb-8">
           <BrandMastHead compact />
         </div>
