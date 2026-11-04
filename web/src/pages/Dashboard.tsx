@@ -15,6 +15,7 @@ import {
   TreatmentChips,
   VitalsFields,
 } from "../components/AssessmentSectionFields.tsx";
+import EngineStatus from "../components/EngineStatus.tsx";
 import PatientModal from "../components/PatientModal.tsx";
 import PatientSearch from "../components/PatientSearch.tsx";
 import ImportVitalsCsvModal from "../components/ImportVitalsCsvModal.tsx";
@@ -43,13 +44,21 @@ import type {
 } from "../lib/assessment.ts";
 import type { PredictionResult } from "../lib/ml.ts";
 import { engineConfigured, MlEngineError, runPrediction } from "../lib/ml.ts";
-import { vitalsError, labsError, rangeFieldError } from "../lib/clinicalValidation.ts";
+import {
+  vitalsError,
+  labsError,
+  rangeFieldError,
+} from "../lib/clinicalValidation.ts";
 import { downloadScoredReport } from "../lib/pdfReport.ts";
 import type { ScoredReportContext } from "../lib/pdfReport.ts";
 import ScoringFailureNotice from "../components/ScoringFailureNotice.tsx";
 import RiskOverviewSection from "../components/overview/RiskOverviewSection.tsx";
 import { TIER_COLOR_VARS } from "../lib/tiers.ts";
-import { formatDateLabel, formatDateTimeLabel, formatPatientName } from "../lib/patient.ts";
+import {
+  formatDateLabel,
+  formatDateTimeLabel,
+  formatPatientName,
+} from "../lib/patient.ts";
 import type { Patient } from "../lib/patient.ts";
 import { usePageTitle } from "../hooks/usePageTitle.ts";
 import { guide } from "../lib/authErrors.ts";
@@ -198,7 +207,9 @@ export default function Dashboard() {
   /** Downloadable snapshot (patient + scored inputs) for the PDF report;
    * survives the post-completion wizard reset, cleared when the context
    * switches to another patient. */
-  const [lastScored, setLastScored] = useState<ScoredReportContext | null>(null);
+  const [lastScored, setLastScored] = useState<ScoredReportContext | null>(
+    null,
+  );
   const [saved, setSaved] = useState<{
     name: string;
     status: AssessmentStatus;
@@ -466,7 +477,8 @@ export default function Dashboard() {
     const patient = patients?.find((row) => row.id === patientId) ?? null;
     setLastScored({
       patientId,
-      patientName: patient != null ? formatPatientName(patient) : "Unknown patient",
+      patientName:
+        patient != null ? formatPatientName(patient) : "Unknown patient",
       mrn: patient?.mrn ?? null,
       scoredAt: new Date().toISOString(),
       sections,
@@ -483,9 +495,9 @@ export default function Dashboard() {
       (prev ?? []).map((row) =>
         row.id === patientId
           ? {
-              ...row,
-              riskLevel: riskLevelFromLabel(prediction.riskLabel),
-            }
+            ...row,
+            riskLevel: riskLevelFromLabel(prediction.riskLabel),
+          }
           : row,
       ),
     );
@@ -498,11 +510,7 @@ export default function Dashboard() {
     const failure = scoringFailure;
     if (failure == null || predicting) return;
     setPredicting(true);
-    scoreAssessment(
-      failure.patientId,
-      failure.assessmentId,
-      failure.sections,
-    )
+    scoreAssessment(failure.patientId, failure.assessmentId, failure.sections)
       .catch((error) => {
         console.error("[palse] prediction retry failed", error);
         if (error instanceof MlEngineError) {
@@ -534,11 +542,15 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col gap-8">
+      <EngineStatus />
       {/* Above the intake workflow: risk factors + live population overview.
           Loads its data independently; never gates the wizard below. */}
       <RiskOverviewSection />
 
-      <header id="intake-workflow" className="flex flex-col gap-1.5 scroll-mt-20">
+      <header
+        id="intake-workflow"
+        className="flex flex-col gap-1.5 scroll-mt-20"
+      >
         <p className="text-xs font-bold uppercase tracking-wide text-theme-maroon">
           Clinical intake workflow
         </p>
@@ -618,12 +630,17 @@ export default function Dashboard() {
                     onClick={goBack}
                     className="flex items-center gap-1.5 rounded-lg border border-theme-line px-4 py-2 text-sm font-semibold text-theme-ink transition-colors hover:bg-theme-light-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-maroon"
                   >
-                    <MsIcon name="arrow_back" className="text-[18px]" optical={20} />
+                    <MsIcon
+                      name="arrow_back"
+                      className="text-[18px]"
+                      optical={20}
+                    />
                     Back
                   </button>
                 ) : (
                   <span className="text-xs text-theme-gray">
-                    Required fields are marked <span className="font-bold text-theme-maroon">*</span> —
+                    Required fields are marked{" "}
+                    <span className="font-bold text-theme-maroon">*</span> —
                     everything else can be completed later.
                   </span>
                 )}
@@ -637,7 +654,11 @@ export default function Dashboard() {
                         onClick={() => void handleSave("draft")}
                         className="flex items-center gap-1.5 rounded-lg border border-theme-line px-4 py-2 text-sm font-semibold text-theme-ink transition-colors hover:bg-theme-light-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-maroon disabled:opacity-60"
                       >
-                        <MsIcon name="draft" className="text-[18px]" optical={20} />
+                        <MsIcon
+                          name="draft"
+                          className="text-[18px]"
+                          optical={20}
+                        />
                         Save as draft
                       </button>
                       <PrimaryButton
@@ -750,7 +771,11 @@ function DemographicStep({
       <div className="flex flex-col gap-1.5 md:col-span-2">
         <label htmlFor="patient" className="text-sm font-medium text-theme-ink">
           Patient
-          <span aria-hidden className="ml-1 font-bold text-theme-maroon" title="Required">
+          <span
+            aria-hidden
+            className="ml-1 font-bold text-theme-maroon"
+            title="Required"
+          >
             *
           </span>
         </label>
@@ -770,11 +795,10 @@ function DemographicStep({
 
       {resume != null ? (
         <div
-          className={`md:col-span-2 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border px-4 py-3 text-sm ${
-            resumeLoaded
-              ? "border-theme-line bg-theme-light-gray/60 text-theme-ink"
-              : "border-theme-maroon/30 bg-theme-maroon/5 text-theme-ink"
-          }`}
+          className={`md:col-span-2 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border px-4 py-3 text-sm ${resumeLoaded
+            ? "border-theme-line bg-theme-light-gray/60 text-theme-ink"
+            : "border-theme-maroon/30 bg-theme-maroon/5 text-theme-ink"
+            }`}
         >
           <span>
             {resumeLoaded ? (
@@ -801,7 +825,11 @@ function DemographicStep({
       <div className="flex flex-col gap-1.5">
         <span className="text-sm font-medium text-theme-ink">
           Sex
-          <span aria-hidden className="ml-1 font-bold text-theme-maroon" title="Required">
+          <span
+            aria-hidden
+            className="ml-1 font-bold text-theme-maroon"
+            title="Required"
+          >
             *
           </span>
         </span>
@@ -1018,7 +1046,11 @@ function NeonatalStep({
               min={0}
               max={10}
               value={neonatal.apgarOneMinute}
-              error={liveRangeError(neonatal.apgarOneMinute, { label: "APGAR (1 min)", min: 0, max: 10 })}
+              error={liveRangeError(neonatal.apgarOneMinute, {
+                label: "APGAR (1 min)",
+                min: 0,
+                max: 10,
+              })}
               onChange={(event) =>
                 patch("neonatal", { apgarOneMinute: event.target.value })
               }
@@ -1032,7 +1064,11 @@ function NeonatalStep({
               min={0}
               max={10}
               value={neonatal.apgarFiveMinutes}
-              error={liveRangeError(neonatal.apgarFiveMinutes, { label: "APGAR (5 min)", min: 0, max: 10 })}
+              error={liveRangeError(neonatal.apgarFiveMinutes, {
+                label: "APGAR (5 min)",
+                min: 0,
+                max: 10,
+              })}
               onChange={(event) =>
                 patch("neonatal", { apgarFiveMinutes: event.target.value })
               }
@@ -1046,7 +1082,11 @@ function NeonatalStep({
               min={0}
               max={10}
               value={neonatal.apgarTenMinutes}
-              error={liveRangeError(neonatal.apgarTenMinutes, { label: "APGAR (10 min)", min: 0, max: 10 })}
+              error={liveRangeError(neonatal.apgarTenMinutes, {
+                label: "APGAR (10 min)",
+                min: 0,
+                max: 10,
+              })}
               onChange={(event) =>
                 patch("neonatal", { apgarTenMinutes: event.target.value })
               }
@@ -1079,7 +1119,10 @@ function VitalsStep({
         onChange={(next) => patch("vitals", next)}
         idPrefix="vitals"
       />
-      <VitalsHistoryBlock patientId={patientId} assessmentId={resume?.id ?? null} />
+      <VitalsHistoryBlock
+        patientId={patientId}
+        assessmentId={resume?.id ?? null}
+      />
     </div>
   );
 }
@@ -1141,14 +1184,16 @@ function VitalsHistoryBlock({
         recordedAt: recordedAt.toISOString(),
         ...draftToNumericFields(payload.draft),
       });
-      setRecent((prev) =>
-        sortByRecordedDesc([...prev, row]).slice(0, 3),
-      );
+      setRecent((prev) => sortByRecordedDesc([...prev, row]).slice(0, 3));
       setFormResetKey((key) => key + 1);
-      setSavedNotice(`Reading recorded (${formatDateTimeLabel(row.recordedAt)}).`);
+      setSavedNotice(
+        `Reading recorded (${formatDateTimeLabel(row.recordedAt)}).`,
+      );
     } catch (recordError) {
       console.error("[palse] wizard reading record failed", recordError);
-      setFormError(guide(recordError, "Could not record the reading. Try again."));
+      setFormError(
+        guide(recordError, "Could not record the reading. Try again."),
+      );
     } finally {
       setSaving(false);
     }
@@ -1163,7 +1208,10 @@ function VitalsHistoryBlock({
           aria-expanded={open}
           className="flex items-center gap-2 rounded-lg text-sm font-bold uppercase tracking-wide text-theme-ink transition-colors hover:text-theme-maroon focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-maroon"
         >
-          <span aria-hidden className={`ms transition-transform ${open ? "rotate-90" : ""} text-[16px]`}>
+          <span
+            aria-hidden
+            className={`ms transition-transform ${open ? "rotate-90" : ""} text-[16px]`}
+          >
             chevron_right
           </span>
           Earlier / later readings (optional)
@@ -1211,7 +1259,8 @@ function VitalsHistoryBlock({
             <ul className="flex flex-col border-t border-theme-line pt-2 text-xs text-theme-gray">
               {recent.map((row) => (
                 <li key={row.id} className="py-1 tabular-nums">
-                  {formatDateTimeLabel(row.recordedAt)} — {describeObservation(row)}
+                  {formatDateTimeLabel(row.recordedAt)} —{" "}
+                  {describeObservation(row)}
                 </li>
               ))}
             </ul>
@@ -1243,8 +1292,10 @@ function describeObservation(row: VitalObservation): string {
   if (row.sbpMmHg != null || row.dbpMmHg != null) {
     parts.push(`${row.sbpMmHg ?? "—"}/${row.dbpMmHg ?? "—"}`);
   }
-  if (row.oxygenSaturationPct != null) parts.push(`O2 ${row.oxygenSaturationPct}%`);
-  if (row.respiratoryRatePerMin != null) parts.push(`RR ${row.respiratoryRatePerMin}`);
+  if (row.oxygenSaturationPct != null)
+    parts.push(`O2 ${row.oxygenSaturationPct}%`);
+  if (row.respiratoryRatePerMin != null)
+    parts.push(`RR ${row.respiratoryRatePerMin}`);
   return parts.length > 0 ? parts.join(", ") : "no values";
 }
 
@@ -1391,7 +1442,13 @@ function ResultsPanel({
   report: ScoredReportContext | null;
 }) {
   if (result != null) {
-    return <ScoredResultsPanel result={result} predicting={predicting} report={report} />;
+    return (
+      <ScoredResultsPanel
+        result={result}
+        predicting={predicting}
+        report={report}
+      />
+    );
   }
 
   const intro = predicting
@@ -1612,9 +1669,9 @@ function SavedConfirmation({
       </h2>
       <p className="mx-auto mt-2 max-w-sm text-sm text-theme-gray">
         {patientName}&apos;s record has been{" "}
-        {status === "draft" ? "stored as a draft" : "recorded"}. It has not
-        been scored yet; it will be scored retroactively once the prediction
-        engine is reachable.
+        {status === "draft" ? "stored as a draft" : "recorded"}. It has not been
+        scored yet; it will be scored retroactively once the prediction engine
+        is reachable.
       </p>
       <PrimaryButton
         onClick={onNew}
@@ -1658,7 +1715,8 @@ function validateStep(
       if (patientId == null) {
         return "Select or create a patient to continue.";
       }
-      const { sex, gestationalAgeWeeks, birthWeightGrams } = sections.demographic;
+      const { sex, gestationalAgeWeeks, birthWeightGrams } =
+        sections.demographic;
       if (mode === "complete" && sex == null) {
         return "Choose the patient's sex to continue.";
       }
@@ -1699,8 +1757,12 @@ function validateStep(
       return null;
     }
     case 3: {
-      const { ageAtAdmissionHours, apgarOneMinute, apgarFiveMinutes, apgarTenMinutes } =
-        sections.neonatal;
+      const {
+        ageAtAdmissionHours,
+        apgarOneMinute,
+        apgarFiveMinutes,
+        apgarTenMinutes,
+      } = sections.neonatal;
       const ageError = rangeFieldError(ageAtAdmissionHours, {
         label: "Age at admission",
         min: 0,
@@ -1733,4 +1795,3 @@ function validateStep(
       return null;
   }
 }
-
