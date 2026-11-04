@@ -1150,9 +1150,9 @@ function CreateClinicianModal({
           <div className="mt-1 flex items-center justify-between gap-3">
             <code
               aria-label="Temporary password"
-              className="min-w-0 break-all font-mono text-sm font-semibold tracking-wide text-theme-ink"
+              className="min-w-0 break-all font-mono text-sm font-semibold tracking-wide text-theme-ink "
             >
-              {tempPassword}
+              {showPassword ? tempPassword : "••••••••••••••"}
             </code>
             <div className="flex shrink-0 items-center gap-1">
               <button

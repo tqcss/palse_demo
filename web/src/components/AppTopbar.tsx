@@ -77,7 +77,7 @@ const Topbar: ComponentType = function Topbar() {
     `${firstName} ${lastName}`.trim() || session?.user.email || "Clinician";
 
   return (
-    <header className="sticky top-0 z-100 border-b border-theme-line bg-theme-white bg-[url('/images/signup-bg-white.png')] bg-top-right px-4 py-3 md:px-8">
+    <header className="sticky top-0 z-31 border-b border-theme-line bg-theme-white bg-[url('/images/signup-bg-white.png')] bg-top-right px-4 py-3 md:px-8">
       <div className="flex w-full items-center justify-between gap-4">
         <div className="flex items-baseline gap-3">
           <Link
