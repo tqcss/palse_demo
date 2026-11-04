@@ -178,6 +178,7 @@ export default function AdminLayout() {
           email={profile?.email ?? ""}
           firstName={profile?.first_name ?? null}
           lastName={profile?.last_name ?? null}
+          avatarUrl={profile?.avatar_url ?? null}
           onOpenMenu={() => setDrawerOpen(true)}
           onSignOut={() => void handleSignOut()}
           hamburgerRef={hamburgerRef}
@@ -306,6 +307,7 @@ function AdminTopBar({
   email,
   firstName,
   lastName,
+  avatarUrl,
   onOpenMenu,
   onSignOut,
   hamburgerRef,
@@ -315,6 +317,7 @@ function AdminTopBar({
   email: string;
   firstName: string | null;
   lastName: string | null;
+  avatarUrl: string | null;
   onOpenMenu: () => void;
   onSignOut: () => void;
   hamburgerRef: React.RefObject<HTMLButtonElement | null>;
@@ -344,6 +347,7 @@ function AdminTopBar({
           email={email}
           firstName={firstName}
           lastName={lastName}
+          avatarUrl={avatarUrl}
           onSignOut={onSignOut}
         />
       </div>
@@ -367,12 +371,14 @@ function UserMenu({
   email,
   firstName,
   lastName,
+  avatarUrl,
   onSignOut,
 }: {
   fullName: string;
   email: string;
   firstName: string | null;
   lastName: string | null;
+  avatarUrl: string | null;
   onSignOut: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -436,7 +442,7 @@ function UserMenu({
         }}
         className="flex items-center gap-2.5 rounded-control px-1.5 py-1 transition-colors hover:bg-theme-light-gray"
       >
-        <Avatar first={firstName} last={lastName} />
+        <Avatar first={firstName} last={lastName} src={avatarUrl} />
         <span className="hidden text-left sm:block">
           <span className="block text-sm font-semibold text-theme-ink">{fullName}</span>
           <span className="block text-[11px] text-theme-gray">Administrator</span>
@@ -455,7 +461,7 @@ function UserMenu({
           className="absolute right-0 z-40 mt-2 flex w-60 flex-col rounded-card border border-theme-line bg-white p-1.5 shadow-card"
         >
           <div className="flex items-center gap-2.5 px-3 py-2">
-            <Avatar first={firstName} last={lastName} size="sm" />
+            <Avatar first={firstName} last={lastName} size="sm" src={avatarUrl} />
             <span className="flex min-w-0 flex-col">
               <span className="block truncate text-sm font-semibold text-theme-ink">{fullName}</span>
               <span className="block truncate text-xs text-theme-gray">{email}</span>

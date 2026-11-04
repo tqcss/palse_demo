@@ -14,6 +14,13 @@ export interface Profile {
   job_title: string | null;
   /** App role: clinician (patient-facing) or admin (manages the org in /admin). */
   role: UserRole;
+  /** Public URL of the user's uploaded profile photo; null = initials chip. */
+  avatar_url: string | null;
+  /**
+   * Clinician PRC license number (6-9 digits) — the sign-in identity.
+   * Null until the backfill; admins keep email sign-in and may not have one.
+   */
+  prc_number: string | null;
   /** pending = awaiting superadmin approval; disabled = locked out. */
   status: AccountStatus;
   org_id: string | null;
