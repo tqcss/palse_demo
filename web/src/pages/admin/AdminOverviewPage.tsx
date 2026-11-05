@@ -21,7 +21,7 @@ import {
 } from "../../lib/db.ts";
 import type { Assessment } from "../../lib/assessment.ts";
 import type { RiskLevel } from "../../lib/patient.ts";
-import { formatPatientName, type Patient } from "../../lib/patient.ts";
+import { formatPatientLabel, type Patient } from "../../lib/patient.ts";
 import {
   type AuditLogEntry,
   type OrgMember,
@@ -310,7 +310,7 @@ export default function AdminOverviewPage() {
       return {
         id: assessment.id,
         patientId: assessment.patientId,
-        patientName: patient != null ? formatPatientName(patient) : "Removed patient",
+        patientName: patient != null ? formatPatientLabel(patient) : "Removed patient",
         mrn: patient?.mrn ?? null,
         status: assessment.status,
         createdAt: assessment.createdAt,

@@ -17,7 +17,7 @@ import {
 } from "../components/AssessmentSectionFields.tsx";
 import EngineStatus from "../components/EngineStatus.tsx";
 import PatientModal from "../components/PatientModal.tsx";
-import PatientSearch from "../components/PatientSearch.tsx";
+import PatientPicker from "../components/PatientPicker.tsx";
 import ImportVitalsCsvModal from "../components/ImportVitalsCsvModal.tsx";
 import VitalReadingForm from "../components/VitalReadingForm.tsx";
 import type { VitalReadingPayload } from "../components/VitalReadingForm.tsx";
@@ -57,7 +57,7 @@ import { TIER_COLOR_VARS } from "../lib/tiers.ts";
 import {
   formatDateLabel,
   formatDateTimeLabel,
-  formatPatientName,
+  formatPatientLabel,
 } from "../lib/patient.ts";
 import type { Patient } from "../lib/patient.ts";
 import { usePageTitle } from "../hooks/usePageTitle.ts";
@@ -427,7 +427,7 @@ export default function Dashboard() {
         setSaved({
           name:
             selectedPatient != null
-              ? formatPatientName(selectedPatient)
+              ? formatPatientLabel(selectedPatient)
               : "The patient",
           status,
         });
@@ -477,8 +477,7 @@ export default function Dashboard() {
     const patient = patients?.find((row) => row.id === patientId) ?? null;
     setLastScored({
       patientId,
-      patientName:
-        patient != null ? formatPatientName(patient) : "Unknown patient",
+      patientInitials: patient != null ? patient.initials : null,
       mrn: patient?.mrn ?? null,
       scoredAt: new Date().toISOString(),
       sections,
@@ -779,7 +778,7 @@ function DemographicStep({
             *
           </span>
         </label>
-        <PatientSearch
+        <PatientPicker
           patients={patients}
           selected={selected}
           disabled={loading}
@@ -1466,7 +1465,7 @@ function ResultsPanel({
         {patient != null ? (
           <>
             <p className="text-sm font-semibold text-theme-ink">
-              {formatPatientName(patient)}
+              {formatPatientLabel(patient)}
             </p>
             <p className="mt-0.5 text-xs text-theme-gray">
               {patient.mrn ? `MRN ${patient.mrn} · ` : ""}Risk level: pending

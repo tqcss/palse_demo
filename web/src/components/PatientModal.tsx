@@ -45,8 +45,7 @@ export default function PatientModal({
 }) {
   const full = mode === "full";
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [initials, setInitials] = useState("");
   const [mrn, setMrn] = useState("");
   const [sex, setSex] = useState<Sex>(null);
   const [dateOfBirth, setDateOfBirth] = useState("");
@@ -58,13 +57,13 @@ export default function PatientModal({
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit() {
-    if (firstName.trim() === "" || lastName.trim() === "") {
-      setError("Enter at least the patient's first and last name.");
+    // Identity is the MRN; initials are optional context. Initials cap at 4
+    // characters (mirrors the patients_initials_length DB constraint).
+    const initialsValue = initials.trim().toUpperCase();
+    if (initialsValue.length > 4) {
+      setError("Initials are at most 4 characters.");
       return;
     }
-    // MRN is the required cross-system identifier (registry surfaces display
-    // name initials alongside it, so a missing MRN would leave an
-    // unidentifiable row).
     if (mrn.trim() === "") {
       setError("MRN is required for every patient registration.");
       return;
@@ -84,12 +83,11 @@ export default function PatientModal({
     try {
       const patient = await createPatient(
         {
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
+          mrn: mrn.trim(),
+          initials: initialsValue === "" ? null : initialsValue,
           sex,
           gestationalAgeWeeks: ga === "" ? null : Number(ga),
           birthWeightGrams: bw === "" ? null : Number(bw),
-          mrn: mrn.trim(),
         },
         full
           ? {
@@ -114,27 +112,23 @@ export default function PatientModal({
 
         <div className="grid gap-5 md:grid-cols-2">
           <FormInput
-            id="new-first-name"
-            label="First name"
-            value={firstName}
-            onChange={(event) => setFirstName(event.target.value)}
+            id="new-mrn"
+            label="MRN №"
+            hint="Required — the patient's medical record number, used to find them everywhere."
+            placeholder="e.g. NEO-2024-001"
+            value={mrn}
+            onChange={(event) => setMrn(event.target.value)}
           />
           <FormInput
-            id="new-last-name"
-            label="Last name"
-            value={lastName}
-            onChange={(event) => setLastName(event.target.value)}
+            id="new-initials"
+            label="Initials"
+            hint="Optional — up to 4 characters."
+            placeholder="e.g. MS"
+            maxLength={4}
+            value={initials}
+            onChange={(event) => setInitials(event.target.value)}
           />
         </div>
-
-        <FormInput
-          id="new-mrn"
-          label="MRN №"
-          hint="Required — the patient's medical record number."
-          placeholder="e.g. NEO-2024-001"
-          value={mrn}
-          onChange={(event) => setMrn(event.target.value)}
-        />
 
         <div className="flex flex-col gap-1.5">
           <span className="text-sm font-medium text-theme-ink">Sex</span>

@@ -27,9 +27,7 @@ interface ReportStats {
 
 export interface ReportEntry {
   id: string;
-  /** Full name (tooltip/a11y only — surfaces show initials for privacy). */
-  patientName: string;
-  /** Identity shown in tables/PDF: two-letter initials (+ MRN line). */
+  /** Printed identity: uppercase initials ("—") + MRN — no stored names. */
   patientInitials: string;
   mrn: string | null;
   status: AssessmentStatus;

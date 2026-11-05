@@ -16,7 +16,7 @@ import type { RiskLevel } from "../lib/patient.ts";
 import {
   formatDateLabel,
   formatPatientInitials,
-  formatPatientName,
+  formatPatientLabel,
 } from "../lib/patient.ts";
 import type { Patient } from "../lib/patient.ts";
 import { usePageTitle } from "../hooks/usePageTitle.ts";
@@ -45,6 +45,8 @@ export default function PatientsPage() {
   const filter: Filter = (FILTER_ORDER as readonly string[]).includes(riskParam ?? "")
     ? (riskParam as Filter)
     : "all";
+  // In-memory MRN/initials search (see the search input below the pills).
+  const [query, setQuery] = useState("");
 
   function updateFilter(next: Filter) {
     setSearchParams(
@@ -95,8 +97,15 @@ export default function PatientsPage() {
   }, [patients]);
 
   const visible = useMemo(
-    () => (patients ?? []).filter((patient) => matches(filter, patient)),
-    [patients, filter],
+    () =>
+      (patients ?? []).filter(
+        (patient) =>
+          matches(filter, patient) &&
+          (query.trim() === "" ||
+            (patient.mrn ?? "").toLowerCase().includes(query.trim().toLowerCase()) ||
+            (patient.initials ?? "").toLowerCase().includes(query.trim().toLowerCase())),
+      ),
+    [patients, filter, query],
   );
 
   function patientAdded(patient: Patient) {
@@ -146,8 +155,17 @@ export default function PatientsPage() {
       {loadError ? <Notice tone="danger">{loadError}</Notice> : null}
       {actionError ? <Notice tone="danger">{actionError}</Notice> : null}
 
-      {/* Filter pills with counts */}
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by risk level">
+      {/* MRN search + risk-filter pills */}
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          type="search"
+          aria-label="Search patients by MRN or initials"
+          placeholder="Search by MRN or initials…"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          className="w-full max-w-xs rounded-lg border border-theme-line bg-white px-3.5 py-2 text-sm text-theme-ink transition-colors placeholder:text-theme-gray focus:border-theme-maroon focus:outline-none focus:ring-2 focus:ring-theme-maroon/25"
+        />
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by risk level">
         {FILTER_ORDER.map((tier) => {
           const active = filter === tier;
           const label =
@@ -177,6 +195,7 @@ export default function PatientsPage() {
             </button>
           );
         })}
+        </div>
       </div>
 
       {loading ? (
@@ -215,8 +234,8 @@ export default function PatientsPage() {
           onConfirm={() => void confirmDelete()}
           question={
             <p>
-              Delete <strong>{formatPatientName(deleting)}</strong>
-              {deleting.mrn ? ` (MRN ${deleting.mrn})` : ""}? All of their
+              Delete <strong>{formatPatientLabel(deleting)}</strong>
+              ? All of their
               assessment records are removed together with the patient. This
               cannot be undone.
             </p>
@@ -261,14 +280,9 @@ function PatientTable({
                 className="border-b border-theme-line/60 last:border-0 odd:bg-white even:bg-theme-light-gray/25"
               >
                 <td className="px-5 py-3.5">
-                  {/* Initials + MRN for privacy; full name for assistive tech. */}
-                  <div
-                    className="font-semibold text-theme-ink"
-                    aria-label={formatPatientName(patient)}
-                  >
-                    <span aria-hidden title={formatPatientName(patient)}>
-                      {formatPatientInitials(patient)}
-                    </span>
+                  {/* Identity = initials + MRN (there are no stored names). */}
+                  <div className="font-semibold text-theme-ink">
+                    {formatPatientInitials(patient)}
                   </div>
                   <div className="text-xs text-theme-gray">
                     MRN {patient.mrn ?? "—"}
@@ -315,13 +329,8 @@ function PatientTable({
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div
-                  className="text-sm font-semibold text-theme-ink"
-                  aria-label={formatPatientName(patient)}
-                >
-                  <span aria-hidden title={formatPatientName(patient)}>
-                    {formatPatientInitials(patient)}
-                  </span>
+                <div className="text-sm font-semibold text-theme-ink">
+                  {formatPatientInitials(patient)}
                 </div>
                 <div className="text-xs text-theme-gray">
                   MRN {patient.mrn ?? "—"} · added {formatDateLabel(patient.createdAt)}

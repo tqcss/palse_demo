@@ -24,8 +24,7 @@ type PatientsRow = {
   id: string;
   created_by: string;
   mrn: string | null;
-  first_name: string;
-  last_name: string;
+  initials: string | null;
   sex: string | null;
   date_of_birth: string | null;
   gestational_age_weeks: number | null;
@@ -43,8 +42,7 @@ function toPatient(row: PatientsRow): Patient {
     id: row.id,
     createdBy: row.created_by,
     mrn: row.mrn,
-    firstName: row.first_name,
-    lastName: row.last_name,
+    initials: row.initials,
     sex: (row.sex as Sex) ?? null,
     dateOfBirth: row.date_of_birth,
     gestationalAgeWeeks: row.gestational_age_weeks,
@@ -70,12 +68,11 @@ export async function listPatients(): Promise<Patient[]> {
 }
 
 interface CreatePatientInput {
-  firstName: string;
-  lastName: string;
+  mrn: string;
+  initials?: string | null;
   sex: Sex;
   gestationalAgeWeeks: number | null;
   birthWeightGrams: number | null;
-  mrn: string | null;
 }
 
 interface CreatePatientExtras {
@@ -92,8 +89,7 @@ export async function createPatient(
     .from("patients")
     .insert({
       mrn: input.mrn,
-      first_name: input.firstName,
-      last_name: input.lastName,
+      initials: input.initials?.trim() === "" ? null : (input.initials ?? null),
       sex: input.sex,
       gestational_age_weeks: input.gestationalAgeWeeks,
       birth_weight_grams: input.birthWeightGrams,
@@ -109,8 +105,7 @@ export async function createPatient(
 }
 
 interface UpdatePatientInput {
-  firstName: string;
-  lastName: string;
+  initials: string | null;
   sex: Exclude<Sex, null> | null;
   dateOfBirth: string | null;
   gestationalAgeWeeks: number | null;
@@ -139,8 +134,7 @@ export async function updatePatient(
   const { data, error } = await supabase
     .from("patients")
     .update({
-      first_name: input.firstName,
-      last_name: input.lastName,
+      initials: input.initials,
       sex: input.sex,
       date_of_birth: input.dateOfBirth,
       gestational_age_weeks: input.gestationalAgeWeeks,

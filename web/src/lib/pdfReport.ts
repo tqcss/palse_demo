@@ -9,7 +9,8 @@ import type { PredictionResult } from "./ml.ts";
 
 export interface ScoredReportContext {
   patientId: string;
-  patientName: string;
+  /** Optional printed initials (identity is carried by the MRN). */
+  patientInitials: string | null;
   mrn: string | null;
   /** ISO timestamp of the scoring moment. */
   scoredAt: string;
@@ -162,16 +163,6 @@ function titleCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-/** "Maria Clara Santos" → "MCS" (privacy-minimized registry identity). */
-function initialsOfName(fullName: string): string {
-  const parts = fullName.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "—";
-  return parts
-    .slice(0, 3)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
-}
-
 function safeFileSegment(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "patient";
 }
@@ -190,7 +181,10 @@ export async function downloadScoredReport(ctx: ScoredReportContext): Promise<vo
   const contentW = PAGE_W - MARGIN * 2;
   const tier = ctx.result.riskLabel.split(" ")[0];
   const tierColor = TIER_COLORS[tier] ?? TIER_COLORS.MODERATE;
-  const initials = initialsOfName(ctx.patientName);
+  const initials =
+    ctx.patientInitials != null && ctx.patientInitials.trim() !== ""
+      ? ctx.patientInitials.trim().toUpperCase()
+      : "—";
 
   /* Header — brand row, document title, meta block right-aligned. */
   doc.setFont("helvetica", "bold");

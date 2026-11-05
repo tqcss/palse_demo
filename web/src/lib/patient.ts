@@ -9,8 +9,11 @@ export interface Patient {
   id: string;
   createdBy: string;
   mrn: string | null;
-  firstName: string;
-  lastName: string;
+  /**
+   * Optional 1-4 character initials (identity is carried by the MRN — see
+   * migrations/20261104110000_patient_initials.sql).
+   */
+  initials: string | null;
   sex: Sex;
   /** ISO date string. */
   dateOfBirth: string | null;
@@ -24,20 +27,22 @@ export interface Patient {
   updatedAt: string;
 }
 
-export function formatPatientName(patient: Patient): string {
-  return `${patient.firstName} ${patient.lastName}`.trim();
+/** Uppercased initials for display; "—" when the patient has none. */
+export function formatPatientInitials(patient: Patient): string {
+  const value = patient.initials?.trim();
+  if (value == null || value === "") return "—";
+  return value.toUpperCase();
 }
 
 /**
- * Initials ("Jd" → uppercase "JD") for registry/report displays, where patient
- * names are minimized for privacy and the required MRN carries identity.
- * Falls back to "—" only when both name parts are empty.
+ * Inline identity label for sentences ("U0 · MRN 0102034") where a full name
+ * used to be shown. Keeps the registry privacy-minimized: initials + MRN only.
  */
-export function formatPatientInitials(patient: Patient): string {
-  const first = patient.firstName.trim().charAt(0);
-  const last = patient.lastName.trim().charAt(0);
-  const initials = `${first}${last}`.toUpperCase();
-  return initials === "" ? "—" : initials;
+export function formatPatientLabel(patient: Patient): string {
+  const mrn = patient.mrn != null && patient.mrn.trim() !== "" ? patient.mrn : null;
+  return [formatPatientInitials(patient), mrn != null ? `MRN ${mrn}` : null]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 /** Short human date for table cells and record stamps (e.g. "Jan 24, 2026"). */

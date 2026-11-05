@@ -4,6 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import Notice from "../components/Notice.tsx";
 import Panel from "../components/Panel.tsx";
 import ImportVitalsCsvModal from "../components/ImportVitalsCsvModal.tsx";
+import PatientPicker from "../components/PatientPicker.tsx";
 import RiskBadge from "../components/RiskBadge.tsx";
 import ScoringFailureNotice from "../components/ScoringFailureNotice.tsx";
 import Sparkline from "../components/Sparkline.tsx";
@@ -29,7 +30,7 @@ import type { Assessment, AssessmentSections, VitalsSection } from "../lib/asses
 import type { PredictionResult } from "../lib/ml.ts";
 import { engineConfigured, getAccessToken, MlEngineError, runPrediction } from "../lib/ml.ts";
 import type { Patient } from "../lib/patient.ts";
-import { formatPatientName, formatDateTimeLabel } from "../lib/patient.ts";
+import { formatPatientLabel, formatDateTimeLabel } from "../lib/patient.ts";
 import { usePageTitle } from "../hooks/usePageTitle.ts";
 import { guide } from "../lib/authErrors.ts";
 import { supabase } from "../lib/supabase.ts";
@@ -399,30 +400,15 @@ export default function MonitorPage() {
       </header>
 
       <div className="flex flex-wrap items-center gap-3">
-        <label htmlFor="monitor-patient" className="text-sm font-medium text-theme-ink">
-          Patient
-        </label>
-        <select
-          id="monitor-patient"
-          value={selectedId ?? ""}
-          disabled={patientLoading}
-          onChange={(event) => handleSelect(event.target.value)}
-          className="min-w-56 rounded-lg border border-theme-line bg-white px-3.5 py-2 text-sm text-theme-ink transition-colors focus:border-theme-maroon focus:outline-none focus:ring-2 focus:ring-theme-maroon/25 disabled:opacity-60"
-        >
-          {patientLoading ? (
-            <option value="">Loading registry…</option>
-          ) : (
-            <>
-              <option value="">Select a patient</option>
-              {(patients ?? []).map((patient) => (
-                <option key={patient.id} value={patient.id}>
-                  {formatPatientName(patient)}
-                  {patient.mrn ? ` — MRN ${patient.mrn}` : ""}
-                </option>
-              ))}
-            </>
-          )}
-        </select>
+        <div className="min-w-72 max-w-md flex-1">
+          <PatientPicker
+            patients={patients}
+            selected={selected}
+            disabled={patientLoading}
+            loading={patientLoading}
+            onSelect={handleSelect}
+          />
+        </div>
 
         <button
           type="button"
@@ -441,7 +427,7 @@ export default function MonitorPage() {
 
       {selected != null && latest == null && observations.length === 0 && !loading && !refreshing ? (
         <Notice tone="info">
-          {formatPatientName(selected)} has no assessment records yet, and no
+          {formatPatientLabel(selected)} has no assessment records yet, and no
           vital-sign readings.{" "}
           <Link to="/dashboard" className="font-semibold underline underline-offset-2">
             Start one on the dashboard
@@ -452,7 +438,7 @@ export default function MonitorPage() {
 
       {selected != null && latest != null && observations.length === 0 && !loading && !refreshing ? (
         <Notice tone="info">
-          No vital-sign readings recorded yet for {formatPatientName(selected)}.
+          No vital-sign readings recorded yet for {formatPatientLabel(selected)}.
           The cards below show the latest assessment's vitals as the fallback —
           record the first reading to start the trend charts.
         </Notice>
@@ -569,7 +555,7 @@ export default function MonitorPage() {
       {importOpen && selected != null ? (
         <ImportVitalsCsvModal
           patientId={selected.id}
-          patientName={formatPatientName(selected)}
+          patientName={formatPatientLabel(selected)}
           assessmentId={assessments[0]?.id ?? null}
           onClose={() => setImportOpen(false)}
           onImported={(rows) =>
@@ -580,14 +566,14 @@ export default function MonitorPage() {
 
       {/* Prediction history */}
       {latest != null && selected != null ? (
-        <PredictionHistory patientName={formatPatientName(selected)} assessments={assessments} />
+        <PredictionHistory patientName={formatPatientLabel(selected)} assessments={assessments} />
       ) : null}
 
       {latest != null && selected != null && !loading && !refreshing ? (
         <Panel className="flex-row items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-theme-ink">
-              {formatPatientName(selected)}
+              {formatPatientLabel(selected)}
             </p>
             <p className="text-xs text-theme-gray">
               {latest.status === "complete" ? "Completed" : "Draft"} assessment ·

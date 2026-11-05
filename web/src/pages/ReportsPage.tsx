@@ -22,7 +22,6 @@ import type { Patient, RiskLevel } from "../lib/patient.ts";
 import {
   formatDateLabel,
   formatPatientInitials,
-  formatPatientName,
 } from "../lib/patient.ts";
 import { usePageTitle } from "../hooks/usePageTitle.ts";
 
@@ -91,7 +90,6 @@ export default function ReportsPage() {
       const patient = patientById.get(assessment.patientId) ?? null;
       return {
         id: assessment.id,
-        patientName: patient != null ? formatPatientName(patient) : "—",
         patientInitials: patient != null ? formatPatientInitials(patient) : "—",
         mrn: patient?.mrn ?? null,
         status: assessment.status,
@@ -253,11 +251,8 @@ export default function ReportsPage() {
                             {entry.id.slice(0, 8)}…
                           </td>
                           <td className="px-4 py-2.5">
-                            <div
-                              className="font-medium text-theme-ink"
-                              title={entry.patientName || undefined}
-                            >
-                              <span aria-hidden>{entry.patientInitials}</span>
+                            <div className="font-medium text-theme-ink">
+                              {entry.patientInitials}
                             </div>
                             {entry.mrn != null ? (
                               <div className="text-[11px] text-theme-gray">
@@ -309,8 +304,8 @@ export default function ReportsPage() {
                       className="rounded-card border border-theme-line bg-white p-3.5"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-semibold text-theme-ink" title={entry.patientName || undefined}>
-                          <span aria-hidden>{entry.patientInitials}</span>
+                        <span className="text-sm font-semibold text-theme-ink">
+                          {entry.patientInitials}
                         </span>
                         <StatusChip status={entry.status} />
                       </div>

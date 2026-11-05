@@ -64,8 +64,7 @@ const OUTCOME_OPTIONS: ReadonlyArray<{ value: Outcome; label: string }> = [
 ];
 
 interface PatientForm {
-  firstName: string;
-  lastName: string;
+  initials: string;
   mrn: string;
   sex: Sex;
   dateOfBirth: string;
@@ -79,8 +78,7 @@ interface PatientForm {
 
 function formFromPatient(patient: Patient): PatientForm {
   return {
-    firstName: patient.firstName,
-    lastName: patient.lastName,
+    initials: patient.initials ?? "",
     mrn: patient.mrn ?? "",
     sex: patient.sex,
     dateOfBirth: patient.dateOfBirth ?? "",
@@ -255,13 +253,14 @@ export default function EditPatientPage() {
     setScoringFailure(null);
 
     // Re-validate the essentials on save.
-    if (formState.firstName.trim() === "" || formState.lastName.trim() === "") {
-      setSaveError("The patient needs a first and last name.");
-      return;
-    }
-    // MRN is the required cross-system identifier (see PatientModal).
+    // Identity is the MRN; initials are optional context (≤ 4 characters,
+    // mirroring the patients_initials_length DB constraint).
     if (formState.mrn.trim() === "") {
       setSaveError("MRN is required for every patient.");
+      return;
+    }
+    if (formState.initials.trim().length > 4) {
+      setSaveError("Initials are at most 4 characters.");
       return;
     }
     const ga = formState.gestationalAgeWeeks.trim();
@@ -295,8 +294,7 @@ export default function EditPatientPage() {
         await setPatientOutcome(patientState.id, formState.outcome);
       }
       const savedPatient = await updatePatient(patientState.id, {
-        firstName: formState.firstName.trim(),
-        lastName: formState.lastName.trim(),
+        initials: formState.initials.trim() === "" ? null : formState.initials.trim().toUpperCase(),
         sex: formState.sex,
         dateOfBirth: formState.dateOfBirth === "" ? null : formState.dateOfBirth,
         gestationalAgeWeeks: ga === "" ? null : Number(ga),
@@ -448,10 +446,12 @@ export default function EditPatientPage() {
               Update patient data
             </p>
             <h1 className="text-2xl font-bold text-theme-ink">
-              {form.firstName.trim() || "Unnamed"} {form.lastName.trim()}
+              {form.mrn.trim() !== "" ? `MRN ${form.mrn.trim()}` : "Patient record"}
             </h1>
-            {form.mrn.trim() !== "" ? (
-              <p className="text-xs text-theme-gray">MRN {form.mrn.trim()}</p>
+            {form.initials.trim() !== "" ? (
+              <p className="text-xs text-theme-gray">
+                Initials {form.initials.trim().toUpperCase()}
+              </p>
             ) : null}
           </div>
           <RiskBadge level={form.riskLevel} />
@@ -483,24 +483,21 @@ export default function EditPatientPage() {
       <Panel title="Demographics & perinatal">
         <div className="grid gap-5 md:grid-cols-2">
           <FormInput
-            id="edit-first-name"
-            label="First name"
-            value={form.firstName}
-            onChange={(event) => patchForm({ firstName: event.target.value })}
-          />
-          <FormInput
-            id="edit-last-name"
-            label="Last name"
-            value={form.lastName}
-            onChange={(event) => patchForm({ lastName: event.target.value })}
-          />
-          <FormInput
             id="edit-mrn"
             label="MRN №"
             hint="Required — the patient's medical record number."
             placeholder="e.g. NEO-2024-001"
             value={form.mrn}
             onChange={(event) => patchForm({ mrn: event.target.value })}
+          />
+          <FormInput
+            id="edit-initials"
+            label="Initials"
+            hint="Optional — up to 4 characters."
+            placeholder="e.g. MS"
+            maxLength={4}
+            value={form.initials}
+            onChange={(event) => patchForm({ initials: event.target.value })}
           />
           <div className="flex flex-col gap-1.5">
             <label htmlFor="edit-risk" className="text-sm font-medium text-theme-ink">
