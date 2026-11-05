@@ -1,8 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
+import { useRef } from "react";
 import type { ComponentType } from "react";
 
 import { useAuth } from "../context/useAuth.ts";
-import Avatar from "./ui/Avatar.tsx";
+import AccountMenu from "./ui/AccountMenu.tsx";
 
 /** Strip for small screens (< md): horizontal nav icons. */
 export function AppMobileNav() {
@@ -62,7 +63,7 @@ function titleForPath(path: string): string {
 
 /** Top app bar: page context + identity, linking to the profile page. */
 const Topbar: ComponentType = function Topbar() {
-  const { profile, user, session } = useAuth();
+  const { profile, user, session, signOut } = useAuth();
   const location = useLocation();
 
   const firstName =
@@ -76,6 +77,26 @@ const Topbar: ComponentType = function Topbar() {
   const display =
     `${firstName} ${lastName}`.trim() || session?.user.email || "Clinician";
 
+  // Same account-menu items vocabulary as the admin console: profile, then
+  // role-scoped navigation, then sign-out.
+  const menuItems = [
+    { id: "profile", label: "Profile", icon: "person", to: "/profile" },
+    { id: "logout", label: "Log out", icon: "logout", action: "signOut" as const },
+  ];
+
+  const signingOutRef = useRef(false);
+
+  function handleSignOut() {
+    if (signingOutRef.current) return;
+    signingOutRef.current = true;
+    void signOut()
+      .catch(() => undefined)
+      .finally(() => {
+        window.location.href = "/signin";
+        signingOutRef.current = false;
+      });
+  }
+
   return (
     <header className="sticky top-0 z-31 border-b border-theme-line bg-theme-white bg-[url('/images/signup-bg-white.png')] bg-top-right px-4 py-3 md:px-8">
       <div className="flex w-full items-center justify-between gap-4">
@@ -88,25 +109,18 @@ const Topbar: ComponentType = function Topbar() {
           </Link>
         </div>
 
-        <Link
-          to="/profile"
-          className="flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-theme-light-gray focus-visible:outline-2 focus-visible:outline-theme-maroon"
-        >
-          <div className="hidden text-right sm:block">
-            <div className="text-sm font-semibold text-theme-ink">
-              {display}
-            </div>
-            <div className="text-xs text-theme-gray">
-              {profile?.role === "admin" ? "Administrator · " : ""}
-              {profile?.job_title || profile?.department || "Clinical team"}
-            </div>
-          </div>
-          <Avatar
-            first={firstName}
-            last={lastName}
-            src={profile?.avatar_url ?? null}
-          />
-        </Link>
+        <AccountMenu
+          fullName={display}
+          email={profile?.email ?? user?.email ?? null}
+          badgeLabel={
+            profile?.role === "admin" ? "Administrator" : "Clinical team"
+          }
+          firstName={firstName || null}
+          lastName={lastName || null}
+          avatarUrl={profile?.avatar_url ?? null}
+          items={menuItems}
+          onSignOut={handleSignOut}
+        />
       </div>
     </header>
   );

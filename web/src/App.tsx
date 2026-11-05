@@ -22,7 +22,6 @@ import NotFound from "./pages/NotFound.tsx";
 import PasswordResetRequest from "./pages/PasswordResetRequest.tsx";
 import PatientsPage from "./pages/PatientsPage.tsx";
 import ProfilePage from "./pages/ProfilePage.tsx";
-import ProfileSecurityPage from "./pages/ProfileSecurityPage.tsx";
 import ReportsPage from "./pages/ReportsPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import Signin from "./pages/Signin.tsx";
@@ -168,10 +167,8 @@ function App() {
           <Route path="/monitor" element={<ClinicalSection><MonitorPage /></ClinicalSection>} />
           <Route path="/reports" element={<ClinicalSection><ReportsPage /></ClinicalSection>} />
           <Route path="/profile" element={<ClinicalSection><ProfilePage /></ClinicalSection>} />
-          <Route
-            path="/profile/security"
-            element={<ClinicalSection><ProfileSecurityPage /></ClinicalSection>}
-          />
+          {/* Old security tab: folded into the single profile page. */}
+          <Route path="/profile/security" element={<Navigate replace to="/profile" />} />
         </Route>
 
         <Route path="/" element={<HomeRedirect />} />
