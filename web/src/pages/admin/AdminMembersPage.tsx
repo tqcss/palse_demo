@@ -1067,10 +1067,12 @@ function CreateClinicianModal({
               tempPassword,
             });
           } catch (caught) {
+            // createClinician throws with a curated message (including
+            // deployment-outage copy) — surface it verbatim.
             setError(
-              typeof caught === "string"
-                ? caught
-                : guide(new Error("Failed"), "Could not create the account."),
+              caught instanceof Error && caught.message.trim() !== ""
+                ? caught.message
+                : guide(caught, "Could not create the account."),
             );
           } finally {
             setPending(false);

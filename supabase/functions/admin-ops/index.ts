@@ -14,7 +14,11 @@
 //   enable_member       { clinician_id }
 //   update_member       { member_id, first_name, last_name, prc_number, department?, job_title? }
 //   resolve_reset_request { reset_request_id }  — dismiss without a password
-import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+// Two hard rules keep this version backward-compatible with the web console
+// contract: every failure answers with a JSON body + CORS headers (even
+// 4xx/5xx), and a failed provisioning step never strands a half-created
+// auth account (it is rolled back before the error surfaces).
+import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.118.0";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -186,6 +190,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
           if (check != null) return json({ error: check }, 400);
         }
 
+        // Duplicate PRC must be caught BEFORE the auth user exists — a
+        // late rejection would strand a provisioned-but-membershipless
+        // account.
+        if (await prcTaken(service, String(body.prc_number).trim())) {
+          return json({ error: "An account with this PRC number already exists." }, 400);
+        }
+
         const { data: created, error: createError } = await service.auth.admin.createUser({
           email: String(body.email).trim(),
           password: body.temp_password,
@@ -202,13 +213,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
           return json({ error: message }, 400);
         }
 
+        // Pre-check done above; this guards a PRC created between the check
+        // and now (races) — reject before the profile update, not after.
         if (await prcTaken(service, String(body.prc_number).trim())) {
+          await service.auth.admin.deleteUser(created.user.id);
           return json({ error: "An account with this PRC number already exists." }, 400);
         }
 
-        // Pre-validate the PRC against the profile-table unique index BEFORE
-        // creating the auth user — otherwise an index rejection would leave a
-        // half-provisioned account.
+        // Provision the membership + PRC on the freshly created profile row.
         const { error: profileError } = await service
           .from("profiles")
           .update({
@@ -228,7 +240,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
           })
           .eq("id", created.user.id);
         if (profileError != null) {
-          return json({ error: "Account created but membership setup failed. Contact a superadmin." }, 500);
+          // Do not leave an org-less, unprovisioned account behind: roll the
+          // auth user back and surface the reason as a 400-ish error.
+          await service.auth.admin.deleteUser(created.user.id);
+          return json(
+            { error: "Could not set up the membership — check that the required SQL migrations are applied, then retry." },
+            400,
+          );
         }
 
         await audit(service, caller, "account.create", created.user.id, {
@@ -405,7 +423,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
           })
           .eq("id", memberId);
         if (updateError != null) {
-          return json({ error: "Could not save the details. Try again." }, 400);
+          return json(
+            { error: "Could not save the details — check that the required SQL migrations are applied, then retry." },
+            400,
+          );
         }
 
         await audit(service, caller, "account.update", memberId, {

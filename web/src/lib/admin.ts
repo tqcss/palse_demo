@@ -155,12 +155,42 @@ export async function callAdminOps(
   });
 
   if (error != null) {
-    // Functions%2FHttpError carries a context message; FunctionHttpError surfaces context.
-    const message =
-      typeof (error as { context?: unknown }).context === "string"
-        ? (error as { context: string }).context
-        : ((error as { message?: string }).message ??
-          "Edge function call failed.");
+    // functions.invoke reports three failure shapes:
+    //  * FunctionsHttpError  — non-2xx from the function; `context` carries
+    //    the JSON body we sent ({ error: "..." }) — extract it so admins see
+    //    the real message instead of a raw `{"error":...}` blob.
+    //  * FunctionsFetchError — the request never completed: offline, or a
+    //    CORS preflight the *deployed* function does not authorize. This is a
+    //    deployment problem, not a code problem — redeploy admin-ops.
+    //  * FunctionsRelayError — relay misconfiguration.
+    const httpError = error as { context?: unknown; message?: string };
+    let message = httpError.message ?? "Edge function call failed.";
+
+    const contextText = typeof httpError.context === "string" ? httpError.context : null;
+    if (contextText != null && contextText.trim() !== "") {
+      try {
+        const parsed: unknown = JSON.parse(contextText);
+        if (
+          parsed != null &&
+          typeof parsed === "object" &&
+          typeof (parsed as { error?: unknown }).error === "string"
+        ) {
+          message = (parsed as { error: string }).error;
+        } else {
+          message = contextText;
+        }
+      } catch {
+        message = contextText;
+      }
+    }
+
+    // The browser reported "CORS request did not succeed" / the fetch failed:
+    // make the deployment root cause visible instead of the generic verdict.
+    if (httpError.message?.includes("Failed to send a request")) {
+      message =
+        "Could not reach the account operations service — the deployed function is missing or stale. Redeploy `admin-ops` and retry.";
+    }
+
     throw new Error(message);
   }
   if (data?.error != null) {
